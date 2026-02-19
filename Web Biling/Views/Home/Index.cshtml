@@ -160,8 +160,6 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbzbuoPAy9U8IJD-8trbWbeeuqL7EhlNB9Y2CeEt-FDQhRiZnv7BgvBA81jJOruUwjffTg/exec";
 
-        let silentAudio = new Audio();
-
         let dataPS = {
             5: { detik: 0, interval: null, jalan: false, endTime: null },
             4: { detik: 0, interval: null, jalan: false, endTime: null },
@@ -206,12 +204,16 @@
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
 
-            // --- TAMBAHAN FITUR: Pancing izin audio browser ---
+            // --- PERBAIKAN AUDIO: Pancing izin browser saat klik tombol MASUK ---
             let pancingan = ['suara/alarm.wav', 'suara/ps3.wav', 'suara/ps2.wav'];
             pancingan.forEach(src => {
                 let a = new Audio(src);
-                a.volume = 0; 
-                a.play().then(() => a.pause()).catch(e => console.log("Audio Init"));
+                a.volume = 0; // Silent play
+                a.play().then(() => {
+                    a.pause();
+                    a.currentTime = 0;
+                    console.log("Audio Unlocked: " + src);
+                }).catch(e => console.log("Audio Init Blocked, but user interacted."));
             });
 
             if (input === PIN_KASIR) {
@@ -338,7 +340,9 @@
                     
                     let audio = new Audio(fullPath);
                     audio.loop = true;
-                    audio.play().catch(e => console.log("Audio terblokir browser."));
+                    audio.play().catch(e => {
+                        console.log("Audio terblokir browser, menunggu interaksi.");
+                    });
 
                     tampilkanPesanHabis(id, audio);
                 }
