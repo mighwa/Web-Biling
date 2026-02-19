@@ -158,12 +158,7 @@
         const PIN_KASIR = "1234";
         let salahHitung = 0;
         let isLocked = false;
-        const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbxbLPDnMlMBrvT0_G1W05raQnNq9zIch4YL8hTMZrE9NuM8eE5nwRN0krEp4gb8RXjo/exec";
-
-        // AUDIO
-        const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
-        const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
-        const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
+        const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbxWD59ogrxR_EwEevWq92xPG0wUWLWrScy7MZiMv4HBK_byZ-fQ723cWdtPb7IWDAMVdQ/exec";
 
         let audioResources = {};
         let dataPS = {
@@ -174,7 +169,7 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null }
         };
 
-        // SINKRONISASI FIREBASE
+        // Firebase Sync
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -209,11 +204,6 @@
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
-            const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
-            for (let key in sounds) {
-                let a = new Audio(sounds[key]);
-                a.volume = 0; a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1; audioResources[key] = a; }).catch(e => {});
-            }
             if (input === PIN_KASIR) {
                 document.getElementById('loginLayer').style.display = "none";
                 document.getElementById('mainBilling').style.display = "block";
@@ -249,7 +239,10 @@
             return true;
         }
 
-        // FUNGSI UTAMA HITUNG HARGA DENGAN FITUR BARU
+        function getNamaPS(id) {
+            return (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
+        }
+
         function hitungHarga(id) {
             if (!cekNama(id)) return;
 
@@ -257,34 +250,34 @@
             let pelanggan = document.getElementById('namaPelang' + id).value;
             let uang = parseInt(input.value);
             let tambahanDetik = 0;
-            let namaPS = (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
+            let namaPS = getNamaPS(id);
 
             if (isNaN(uang) || uang <= 0) return;
 
-            // FITUR BARU: Cek status main baru vs nambah uang
             let tipeLaporan = (dataPS[id].detik <= 0) ? "MULAI MAIN" : "Input Uang";
 
-            if (id == 2) { // PS 2
+            // Logika Harga Tetap Sama
+            if (id == 2) { 
                 if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
                 else if (uang >= 8000) tambahanDetik = (3 * 3600) + (((uang - 8000) / 3000) * 3600);
                 else if (uang >= 5000) tambahanDetik = (2 * 3600) + (((uang - 5000) / 3000) * 3600);
                 else tambahanDetik = (uang / 3000) * 3600;
-            } else if (id == 3) { // PS 3
+            } else if (id == 3) { 
                 if (uang >= 15000) tambahanDetik = (4 * 3600) + (((uang - 15000) / 4000) * 3600);
                 else if (uang >= 12000) tambahanDetik = (3 * 3600) + (((uang - 12000) / 4000) * 3600);
                 else if (uang >= 8000) tambahanDetik = (2 * 3600) + (((uang - 8000) / 4000) * 3600);
                 else tambahanDetik = (uang / 4000) * 3600;
-            } else if (id == 4) { // PS 4 A
+            } else if (id == 4) { 
                 if (uang >= 20000) tambahanDetik = (4.5 * 3600) + (((uang - 20000) / 5000) * 3600);
                 else if (uang >= 15000) tambahanDetik = (3 * 3600) + (((uang - 15000) / 5000) * 3600);
                 else if (uang >= 10000) tambahanDetik = (2 * 3600) + (((uang - 10000) / 5000) * 3600);
                 else tambahanDetik = (uang / 5000) * 3600;
-            } else if (id == 1) { // PS 4 Lebih
+            } else if (id == 1) { 
                 if (uang >= 24000) tambahanDetik = (4.5 * 3600) + (((uang - 24000) / 6000) * 3600);
                 else if (uang >= 18000) tambahanDetik = (3 * 3600) + (((uang - 18000) / 6000) * 3600);
                 else if (uang >= 12000) tambahanDetik = (2 * 3600) + (((uang - 12000) / 6000) * 3600);
                 else tambahanDetik = (uang / 6000) * 3600;
-            } else if (id == 5) { // PS 5
+            } else if (id == 5) { 
                 if (uang >= 40000) tambahanDetik = (4.5 * 3600) + (((uang - 40000) / 10000) * 3600);
                 else if (uang >= 30000) tambahanDetik = (3 * 3600) + (((uang - 30000) / 10000) * 3600);
                 else if (uang >= 20000) tambahanDetik = (2 * 3600) + (((uang - 20000) / 10000) * 3600);
@@ -311,7 +304,7 @@
             dataPS[id].endTime = Date.now() + sisaMs + (menit * 60 * 1000);
             updateCloud(id, true);
             updateTampilan(id);
-            kirimKeSheets("Unit", pelanggan, "Tambah Menit", menit + " mnt", document.getElementById('timer' + id).innerText);
+            kirimKeSheets(getNamaPS(id), pelanggan, "Tambah Menit", menit + " mnt", document.getElementById('timer' + id).innerText);
             inputMnt.value = "";
         }
 
@@ -334,10 +327,7 @@
                 } else {
                     clearInterval(dataPS[id].interval);
                     dataPS[id].detik = 0; dataPS[id].jalan = false;
-                    let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
-                    let audio = audioResources[soundKey];
-                    if (audio) { audio.loop = true; audio.play().catch(e => {}); }
-                    tampilkanPesanHabis(id, audio);
+                    alert("Waktu Habis!");
                 }
             }, 1000);
         }
@@ -360,41 +350,25 @@
         }
 
         function pauseBilling(id) {
+            let sisaWaktu = document.getElementById('timer' + id).innerText;
             updateCloud(id, false);
             let pelanggan = document.getElementById('namaPelang' + id).value;
-            kirimKeSheets("Unit", pelanggan, "STOP/PAUSE", "-", document.getElementById('timer' + id).innerText);
+            kirimKeSheets(getNamaPS(id), pelanggan, "STOP/PAUSE", "-", sisaWaktu);
         }
 
         function resetBilling(id) {
             if (!confirm("Yakin ingin RESET?")) return;
+            let sisaWaktu = document.getElementById('timer' + id).innerText;
             let pelanggan = document.getElementById('namaPelang' + id).value;
-            kirimKeSheets("Unit", pelanggan, "RESET (OFF)", "-", "00:00:00");
-            dataPS[id].detik = 0; dataPS[id].endTime = 0;
+            
+            // Kirim laporan sisa terakhir ke Sheets sebelum di-nolkan
+            kirimKeSheets(getNamaPS(id), pelanggan, "RESET (OFF)", "-", sisaWaktu);
+            
+            dataPS[id].detik = 0; 
+            dataPS[id].endTime = 0;
             updateCloud(id, false);
             document.getElementById('namaPelang' + id).value = "";
-        }
-
-        function tampilkanPesanHabis(id, audio) {
-            if (document.getElementById("notif-habis-" + id)) return;
-            let div = document.createElement("div");
-            div.id = "notif-habis-" + id;
-            div.style = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:red; color:white; padding:30px; border-radius:15px; text-align:center; z-index:9999; border: 5px solid white;";
-            div.innerHTML = `
-                <h1 class='fw-bold'>WAKTU HABIS!</h1>
-                <p>Silakan periksa unit PS Anda.</p>
-                <button class='btn btn-light btn-lg fw-bold' onclick="matikanAlarmManual(${id})">MATIKAN ALARM</button>
-            `;
-            document.body.appendChild(div);
-            window["audio_aktif_" + id] = audio;
-        }
-
-        function matikanAlarmManual(id) {
-            if (window["audio_aktif_" + id]) {
-                window["audio_aktif_" + id].pause();
-                window["audio_aktif_" + id].currentTime = 0;
-            }
-            let notif = document.getElementById("notif-habis-" + id);
-            if (notif) notif.remove();
+            updateTampilan(id);
         }
     </script>
 }
