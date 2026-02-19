@@ -160,6 +160,11 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbxWD59ogrxR_EwEevWq92xPG0wUWLWrScy7MZiMv4HBK_byZ-fQ723cWdtPb7IWDAMVdQ/exec";
 
+        // LINK AUDIO
+        const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
+        const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
+        const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
+
         let audioResources = {};
         let dataPS = {
             5: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
@@ -176,7 +181,7 @@
                 if (cloudData) {
                     const sekarang = Date.now();
                     document.getElementById('namaPelang' + id).value = cloudData.pelanggan || "";
-                    dataPS[id].uangTerakhir = cloudData.uangTerakhir || 0; // Sinkronkan uang akumulasi
+                    dataPS[id].uangTerakhir = cloudData.uangTerakhir || 0;
                     if (cloudData.jalan && cloudData.endTime > sekarang) {
                         dataPS[id].endTime = cloudData.endTime;
                         dataPS[id].detik = Math.floor((cloudData.endTime - sekarang) / 1000);
@@ -193,19 +198,26 @@
                 endTime: dataPS[id].endTime || 0,
                 jalan: jalanStatus,
                 pelanggan: document.getElementById('namaPelang' + id).value,
-                uangTerakhir: dataPS[id].uangTerakhir // Simpan uang akumulasi ke Firebase
+                uangTerakhir: dataPS[id].uangTerakhir
             });
         }
 
         function kirimKeSheets(namaPS, pelanggan, tipe, jumlah, sisa) {
-            if (URL_SPREADSHEET.includes("exec")) {
-                fetch(`${URL_SPREADSHEET}?namaPS=${namaPS}&pelanggan=${pelanggan}&tipe=${tipe}&jumlah=${jumlah}&sisa=${sisa}`, { mode: 'no-cors' });
-            }
+            fetch(`${URL_SPREADSHEET}?namaPS=${namaPS}&pelanggan=${pelanggan}&tipe=${tipe}&jumlah=${jumlah}&sisa=${sisa}`, { mode: 'no-cors' });
         }
 
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
+
+            // Buka Audio HP
+            const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
+            for (let key in sounds) {
+                let a = new Audio(sounds[key]);
+                a.volume = 0;
+                a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1; audioResources[key] = a; }).catch(e => {});
+            }
+
             if (input === PIN_KASIR) {
                 document.getElementById('loginLayer').style.display = "none";
                 document.getElementById('mainBilling').style.display = "block";
@@ -235,35 +247,24 @@
             }, 1000);
         }
 
-        function cekNama(id) {
-            let n = document.getElementById('namaPelang' + id).value.trim();
-            if (n === "") { alert("⚠️ HARAP ISI NAMA PELANGGAN TERLEBIH DAHULU!"); return false; }
-            return true;
-        }
-
-        function getNamaPS(id) {
+        function getNamaUnit(id) {
             return (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
         }
 
         function hitungHarga(id) {
-            if (!cekNama(id)) return;
+            let n = document.getElementById('namaPelang' + id).value.trim();
+            if (n === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
 
             let input = document.getElementById('input' + id);
-            let pelanggan = document.getElementById('namaPelang' + id).value;
             let uang = parseInt(input.value);
-            let tambahanDetik = 0;
-            let namaPS = getNamaPS(id);
-
             if (isNaN(uang) || uang <= 0) return;
 
-            // AKUMULASI UANG: Jika timer habis, mulai dari 0. Jika sedang main, tambah terus.
-            if (dataPS[id].detik <= 0) {
-                dataPS[id].uangTerakhir = uang;
-            } else {
-                dataPS[id].uangTerakhir += uang;
-            }
+            if (dataPS[id].detik <= 0) dataPS[id].uangTerakhir = uang;
+            else dataPS[id].uangTerakhir += uang;
 
+            let namaPS = getNamaUnit(id);
             let tipeLaporan = (dataPS[id].detik <= 0) ? "MULAI MAIN" : "Input Uang";
+            let tambahanDetik = 0;
 
             if (id == 2) { 
                 if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
@@ -297,29 +298,22 @@
                 dataPS[id].endTime = Date.now() + sisaMs + (tambahanDetik * 1000);
                 updateCloud(id, true);
                 updateTampilan(id);
-                kirimKeSheets(namaPS, pelanggan, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
+                kirimKeSheets(namaPS, n, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
                 input.value = "";
             }
         }
 
         function tambahMenit(id) {
-            if (!cekNama(id)) return;
-            let inputMnt = document.getElementById('inputMenit' + id);
-            let pelanggan = document.getElementById('namaPelang' + id).value;
-            let menit = parseInt(inputMnt.value);
-            if (isNaN(menit) || menit <= 0) return;
+            let n = document.getElementById('namaPelang' + id).value.trim();
+            if (n === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
+            let mnt = parseInt(document.getElementById('inputMenit' + id).value);
+            if (isNaN(mnt) || mnt <= 0) return;
             let sisaMs = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) : 0;
-            dataPS[id].endTime = Date.now() + sisaMs + (menit * 60 * 1000);
+            dataPS[id].endTime = Date.now() + sisaMs + (mnt * 60 * 1000);
             updateCloud(id, true);
             updateTampilan(id);
-            // Tetap kirim total uang akumulasi saat tambah menit
-            kirimKeSheets(getNamaPS(id), pelanggan, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
-            inputMnt.value = "";
-        }
-
-        function mulaiMundur(id) {
-            if (!cekNama(id)) return;
-            updateCloud(id, true);
+            kirimKeSheets(getNamaPS(id), n, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
+            document.getElementById('inputMenit' + id).value = "";
         }
 
         function mulaiMundurLokal(id) {
@@ -329,14 +323,19 @@
             dataPS[id].jalan = true;
             clearInterval(dataPS[id].interval);
             dataPS[id].interval = setInterval(() => {
-                const sisaMs = dataPS[id].endTime - Date.now();
-                if (sisaMs > 0) {
-                    dataPS[id].detik = Math.floor(sisaMs / 1000);
+                const sMs = dataPS[id].endTime - Date.now();
+                if (sMs > 0) {
+                    dataPS[id].detik = Math.floor(sMs / 1000);
                     updateTampilan(id);
                 } else {
                     clearInterval(dataPS[id].interval);
                     dataPS[id].detik = 0; dataPS[id].jalan = false;
-                    alert("Waktu Habis!");
+                    
+                    // Putar Suara
+                    let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
+                    let audio = audioResources[soundKey];
+                    if (audio) { audio.loop = true; audio.play().catch(e => {}); }
+                    tampilkanPesanHabis(id, audio);
                 }
             }, 1000);
         }
@@ -359,27 +358,45 @@
         }
 
         function pauseBilling(id) {
-            let sisaWaktu = document.getElementById('timer' + id).innerText;
+            let sisa = document.getElementById('timer' + id).innerText;
             updateCloud(id, false);
-            let pelanggan = document.getElementById('namaPelang' + id).value;
-            // Kirim total uang akumulasi, bukan "-"
-            kirimKeSheets(getNamaPS(id), pelanggan, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisaWaktu);
+            kirimKeSheets(getNamaPS(id), document.getElementById('namaPelang' + id).value, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisa);
         }
 
         function resetBilling(id) {
-            if (!confirm("Yakin ingin RESET?")) return;
-            let sisaWaktu = document.getElementById('timer' + id).innerText;
-            let pelanggan = document.getElementById('namaPelang' + id).value;
-            
-            // Kirim total uang terakhir sebelum benar-benar di-reset
-            kirimKeSheets(getNamaPS(id), pelanggan, "RESET (OFF)", "Rp " + dataPS[id].uangTerakhir, sisaWaktu);
+            if (!confirm("RESET TOTAL?")) return;
+            let sisa = document.getElementById('timer' + id).innerText;
+            kirimKeSheets(getNamaPS(id), document.getElementById('namaPelang' + id).value, "RESET (OFF)", "Rp " + dataPS[id].uangTerakhir, sisa);
             
             dataPS[id].detik = 0; 
             dataPS[id].endTime = 0;
-            dataPS[id].uangTerakhir = 0; // Kembalikan ke 0 setelah sesi selesai
+            dataPS[id].uangTerakhir = 0;
             updateCloud(id, false);
             document.getElementById('namaPelang' + id).value = "";
             updateTampilan(id);
+        }
+
+        function tampilkanPesanHabis(id, audio) {
+            if (document.getElementById("notif-habis-" + id)) return;
+            let div = document.createElement("div");
+            div.id = "notif-habis-" + id;
+            div.style = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:red; color:white; padding:30px; border-radius:15px; text-align:center; z-index:9999; border: 5px solid white;";
+            div.innerHTML = `
+                <h1 class='fw-bold'>WAKTU HABIS!</h1>
+                <p>Silakan periksa unit ${getNamaUnit(id)} Anda.</p>
+                <button class='btn btn-light btn-lg fw-bold' onclick="matikanAlarmManual(${id})">MATIKAN ALARM</button>
+            `;
+            document.body.appendChild(div);
+            window["audio_aktif_" + id] = audio;
+        }
+
+        function matikanAlarmManual(id) {
+            if (window["audio_aktif_" + id]) {
+                window["audio_aktif_" + id].pause();
+                window["audio_aktif_" + id].currentTime = 0;
+            }
+            let notif = document.getElementById("notif-habis-" + id);
+            if (notif) notif.remove();
         }
     </script>
 }
