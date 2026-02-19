@@ -160,7 +160,7 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbzbuoPAy9U8IJD-8trbWbeeuqL7EhlNB9Y2CeEt-FDQhRiZnv7BgvBA81jJOruUwjffTg/exec";
 
-        // LINK AUDIO
+        // AUDIO
         const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
         const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
         const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
@@ -174,7 +174,7 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null }
         };
 
-        // Sinkronisasi dengan Firebase
+        // SINKRONISASI FIREBASE
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -206,24 +206,14 @@
             }
         }
 
-        // FUNGSI LOGIN & AKTIVASI SUARA (HP FRIENDLY)
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
-
-            // Membuka "Gembok" Audio di Browser HP
             const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
             for (let key in sounds) {
                 let a = new Audio(sounds[key]);
-                a.volume = 0; 
-                a.play().then(() => {
-                    a.pause();
-                    a.currentTime = 0;
-                    a.volume = 1;
-                    audioResources[key] = a; 
-                }).catch(e => console.log("Audio Unlocking..."));
+                a.volume = 0; a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1; audioResources[key] = a; }).catch(e => {});
             }
-
             if (input === PIN_KASIR) {
                 document.getElementById('loginLayer').style.display = "none";
                 document.getElementById('mainBilling').style.display = "block";
@@ -246,26 +236,22 @@
                 document.getElementById('cooldown').innerText = waktuTunggu;
                 if (waktuTunggu <= 0) {
                     clearInterval(countdownInterval);
-                    isLocked = false;
-                    salahHitung = 0;
+                    isLocked = false; salahHitung = 0;
                     document.getElementById('loginForm').style.display = "block";
                     document.getElementById('lockMessage').style.display = "none";
                 }
             }, 1000);
         }
 
-        // FUNGSI VALIDASI NAMA
         function cekNama(id) {
             let n = document.getElementById('namaPelang' + id).value.trim();
-            if (n === "") {
-                alert("⚠️ HARAP ISI NAMA PELANGGAN TERLEBIH DAHULU!");
-                return false;
-            }
+            if (n === "") { alert("⚠️ HARAP ISI NAMA PELANGGAN TERLEBIH DAHULU!"); return false; }
             return true;
         }
 
+        // FUNGSI UTAMA HITUNG HARGA DENGAN FITUR BARU
         function hitungHarga(id) {
-            if (!cekNama(id)) return; // Validasi Nama
+            if (!cekNama(id)) return;
 
             let input = document.getElementById('input' + id);
             let pelanggan = document.getElementById('namaPelang' + id).value;
@@ -274,9 +260,10 @@
             let namaPS = (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
 
             if (isNaN(uang) || uang <= 0) return;
+
+            // FITUR BARU: Cek status main baru vs nambah uang
             let tipeLaporan = (dataPS[id].detik <= 0) ? "MULAI MAIN" : "Input Uang";
 
-            // Logika Perhitungan Waktu
             if (id == 2) { // PS 2
                 if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
                 else if (uang >= 8000) tambahanDetik = (3 * 3600) + (((uang - 8000) / 3000) * 3600);
@@ -315,23 +302,21 @@
         }
 
         function tambahMenit(id) {
-            if (!cekNama(id)) return; // Validasi Nama
-
+            if (!cekNama(id)) return;
             let inputMnt = document.getElementById('inputMenit' + id);
             let pelanggan = document.getElementById('namaPelang' + id).value;
             let menit = parseInt(inputMnt.value);
             if (isNaN(menit) || menit <= 0) return;
-
             let sisaMs = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) : 0;
             dataPS[id].endTime = Date.now() + sisaMs + (menit * 60 * 1000);
             updateCloud(id, true);
             updateTampilan(id);
-            kirimKeSheets((id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : "Unit", pelanggan, "Tambah Menit", menit + " mnt", document.getElementById('timer' + id).innerText);
+            kirimKeSheets("Unit", pelanggan, "Tambah Menit", menit + " mnt", document.getElementById('timer' + id).innerText);
             inputMnt.value = "";
         }
 
         function mulaiMundur(id) {
-            if (!cekNama(id)) return; // Validasi Nama
+            if (!cekNama(id)) return;
             updateCloud(id, true);
         }
 
@@ -348,16 +333,10 @@
                     updateTampilan(id);
                 } else {
                     clearInterval(dataPS[id].interval);
-                    dataPS[id].detik = 0;
-                    dataPS[id].jalan = false;
-                    
-                    // Putar Suara
+                    dataPS[id].detik = 0; dataPS[id].jalan = false;
                     let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
                     let audio = audioResources[soundKey];
-                    if (audio) {
-                        audio.loop = true;
-                        audio.play().catch(e => console.log("Audio terhambat"));
-                    }
+                    if (audio) { audio.loop = true; audio.play().catch(e => {}); }
                     tampilkanPesanHabis(id, audio);
                 }
             }, 1000);
@@ -390,8 +369,7 @@
             if (!confirm("Yakin ingin RESET?")) return;
             let pelanggan = document.getElementById('namaPelang' + id).value;
             kirimKeSheets("Unit", pelanggan, "RESET (OFF)", "-", "00:00:00");
-            dataPS[id].detik = 0;
-            dataPS[id].endTime = 0;
+            dataPS[id].detik = 0; dataPS[id].endTime = 0;
             updateCloud(id, false);
             document.getElementById('namaPelang' + id).value = "";
         }
