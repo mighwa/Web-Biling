@@ -160,6 +160,11 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbzbuoPAy9U8IJD-8trbWbeeuqL7EhlNB9Y2CeEt-FDQhRiZnv7BgvBA81jJOruUwjffTg/exec";
 
+        // LINK DROPBOX MODIFIKASI (raw=1 agar bisa diputar langsung)
+        const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
+        const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
+        const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
+
         let dataPS = {
             5: { detik: 0, interval: null, jalan: false, endTime: null },
             4: { detik: 0, interval: null, jalan: false, endTime: null },
@@ -205,7 +210,7 @@
             let input = document.getElementById('pinInput').value;
 
             // --- PERBAIKAN AUDIO: Pancing izin browser saat klik tombol MASUK ---
-            let pancingan = ['suara/alarm.wav', 'suara/ps3.wav', 'suara/ps2.wav'];
+            let pancingan = [linkAlarm, linkPS3, linkPS2];
             pancingan.forEach(src => {
                 let a = new Audio(src);
                 a.volume = 0; // Silent play
@@ -334,11 +339,9 @@
                     dataPS[id].detik = 0;
                     dataPS[id].jalan = false;
                     
-                    let folder = "suara/"; 
-                    let soundFile = (id == 5 || id == 4 || id == 1) ? "alarm.wav" : (id == 3 ? "ps3.wav" : "ps2.wav");
-                    let fullPath = folder + soundFile;
+                    let soundFile = (id == 5 || id == 4 || id == 1) ? linkAlarm : (id == 3 ? linkPS3 : linkPS2);
                     
-                    let audio = new Audio(fullPath);
+                    let audio = new Audio(soundFile);
                     audio.loop = true;
                     audio.play().catch(e => {
                         console.log("Audio terblokir browser, menunggu interaksi.");
