@@ -160,10 +160,13 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbzbuoPAy9U8IJD-8trbWbeeuqL7EhlNB9Y2CeEt-FDQhRiZnv7BgvBA81jJOruUwjffTg/exec";
 
-        // LINK DROPBOX MODIFIKASI (raw=1 agar bisa diputar langsung)
+        // LINK AUDIO
         const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
         const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
         const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
+
+        // Objek Audio Global (untuk di-unlock saat login)
+        let audioResources = {};
 
         let dataPS = {
             5: { detik: 0, interval: null, jalan: false, endTime: null },
@@ -173,6 +176,7 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null }
         };
 
+        // Sync Firebase
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -205,21 +209,24 @@
             }
         }
 
+        // FUNGSI LOGIN & AKTIVASI SUARA
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
 
-            // --- PERBAIKAN AUDIO: Pancing izin browser saat klik tombol MASUK ---
-            let pancingan = [linkAlarm, linkPS3, linkPS2];
-            pancingan.forEach(src => {
-                let a = new Audio(src);
-                a.volume = 0; // Silent play
+            // --- PROSES AKTIVASI SUARA UNTUK HP ---
+            // Kita "putar" audio secara hening (volume 0) agar browser HP memberi izin akses suara ke website ini
+            const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
+            for (let key in sounds) {
+                let a = new Audio(sounds[key]);
+                a.volume = 0; 
                 a.play().then(() => {
                     a.pause();
                     a.currentTime = 0;
-                    console.log("Audio Unlocked: " + src);
-                }).catch(e => console.log("Audio Init Blocked, but user interacted."));
-            });
+                    a.volume = 1; // Kembalikan volume normal setelah izin didapat
+                    audioResources[key] = a; // Simpan ke memori
+                }).catch(e => console.log("Izin suara tertunda..."));
+            }
 
             if (input === PIN_KASIR) {
                 document.getElementById('loginLayer').style.display = "none";
@@ -339,12 +346,13 @@
                     dataPS[id].detik = 0;
                     dataPS[id].jalan = false;
                     
-                    let soundFile = (id == 5 || id == 4 || id == 1) ? linkAlarm : (id == 3 ? linkPS3 : linkPS2);
+                    // Gunakan Audio yang sudah di-unlock sebelumnya
+                    let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
+                    let audio = audioResources[soundKey] || new Audio((id == 5 || id == 4 || id == 1) ? linkAlarm : (id == 3 ? linkPS3 : linkPS2));
                     
-                    let audio = new Audio(soundFile);
                     audio.loop = true;
                     audio.play().catch(e => {
-                        console.log("Audio terblokir browser, menunggu interaksi.");
+                        console.log("Audio terblokir sistem HP. Mencoba fallback...");
                     });
 
                     tampilkanPesanHabis(id, audio);
