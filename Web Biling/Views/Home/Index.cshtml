@@ -160,6 +160,9 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbzbuoPAy9U8IJD-8trbWbeeuqL7EhlNB9Y2CeEt-FDQhRiZnv7BgvBA81jJOruUwjffTg/exec";
 
+        // Variabel Audio Global untuk pancingan izin browser
+        let silentAudio = new Audio();
+
         let dataPS = {
             5: { detik: 0, interval: null, jalan: false, endTime: null },
             4: { detik: 0, interval: null, jalan: false, endTime: null },
@@ -203,6 +206,10 @@
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
+
+            // Pancing izin audio browser di sini
+            silentAudio.play().catch(() => {});
+
             if (input === PIN_KASIR) {
                 document.getElementById('loginLayer').style.display = "none";
                 document.getElementById('mainBilling').style.display = "block";
@@ -325,7 +332,6 @@
                     dataPS[id].detik = 0;
                     dataPS[id].jalan = false;
                     
-                    // Jika di GitHub folder bernama "suara", gunakan ini:
                     let folder = "/suara/"; 
                     let soundFile = (id == 5 || id == 4 || id == 1) ? folder + "alarm.wav" : (id == 3 ? folder + "ps3.wav" : folder + "ps2.wav");
                     
