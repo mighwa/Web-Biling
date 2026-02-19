@@ -31,7 +31,7 @@
                         <h4 class="text-warning fw-bold">PS 4 (Unit A)</h4>
                         <div id="timer4" class="display-4 fw-bold text-success my-3">00:00:00</div>
                         <div class="btn-group w-100 mb-3">
-                            <button id="btnPlay4" class="btn btn-warning fw-bold" onclick="mulaiMundur(4)" style="display:none;">▶ PLAY</button>
+                            <button id="btnPlay4" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(4)" style="display:none;">▶ PLAY</button>
                             <button id="btnStop4" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(4)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input4" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
@@ -51,7 +51,7 @@
                         <h4 class="text-danger fw-bold">PS 4 (Lebih)</h4>
                         <div id="timer1" class="display-4 fw-bold text-danger my-3">00:00:00</div>
                         <div class="btn-group w-100 mb-3">
-                            <button id="btnPlay1" class="btn btn-warning fw-bold" onclick="mulaiMundur(1)" style="display:none;">▶ PLAY</button>
+                            <button id="btnPlay1" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(1)" style="display:none;">▶ PLAY</button>
                             <button id="btnStop1" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(1)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input1" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
@@ -75,7 +75,7 @@
                         <h4 class="text-info fw-bold">Playstation 3</h4>
                         <div id="timer3" class="display-4 fw-bold text-info my-3">00:00:00</div>
                         <div class="btn-group w-100 mb-3">
-                            <button id="btnPlay3" class="btn btn-warning fw-bold" onclick="mulaiMundur(3)" style="display:none;">▶ PLAY</button>
+                            <button id="btnPlay3" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(3)" style="display:none;">▶ PLAY</button>
                             <button id="btnStop3" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(3)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input3" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
@@ -95,7 +95,7 @@
                         <h4 class="text-white fw-bold">Playstation 2</h4>
                         <div id="timer2" class="display-4 fw-bold text-white my-3">00:00:00</div>
                         <div class="btn-group w-100 mb-3">
-                            <button id="btnPlay2" class="btn btn-warning fw-bold" onclick="mulaiMundur(2)" style="display:none;">▶ PLAY</button>
+                            <button id="btnPlay2" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(2)" style="display:none;">▶ PLAY</button>
                             <button id="btnStop2" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(2)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input2" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
@@ -119,7 +119,7 @@
                         <h4 class="text-light fw-bold">Unit PS 5</h4>
                         <div id="timer5" class="display-4 fw-bold text-info my-3">00:00:00</div>
                         <div class="btn-group w-100 mb-3">
-                            <button id="btnPlay5" class="btn btn-warning fw-bold" onclick="mulaiMundur(5)" style="display:none;">▶ PLAY</button>
+                            <button id="btnPlay5" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(5)" style="display:none;">▶ PLAY</button>
                             <button id="btnStop5" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(5)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input5" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
@@ -174,7 +174,6 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 }
         };
 
-        // Firebase Sync
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -209,8 +208,6 @@
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
-
-            // Buka Audio HP
             const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
             for (let key in sounds) {
                 let a = new Audio(sounds[key]);
@@ -252,8 +249,8 @@
         }
 
         function hitungHarga(id) {
-            let n = document.getElementById('namaPelang' + id).value.trim();
-            if (n === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
+            let nInput = document.getElementById('namaPelang' + id);
+            if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
 
             let input = document.getElementById('input' + id);
             let uang = parseInt(input.value);
@@ -298,21 +295,21 @@
                 dataPS[id].endTime = Date.now() + sisaMs + (tambahanDetik * 1000);
                 updateCloud(id, true);
                 updateTampilan(id);
-                kirimKeSheets(namaPS, n, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
+                kirimKeSheets(namaPS, nInput.value, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
                 input.value = "";
             }
         }
 
         function tambahMenit(id) {
-            let n = document.getElementById('namaPelang' + id).value.trim();
-            if (n === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
+            let nInput = document.getElementById('namaPelang' + id);
+            if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
             let mnt = parseInt(document.getElementById('inputMenit' + id).value);
             if (isNaN(mnt) || mnt <= 0) return;
             let sisaMs = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) : 0;
             dataPS[id].endTime = Date.now() + sisaMs + (mnt * 60 * 1000);
             updateCloud(id, true);
             updateTampilan(id);
-            kirimKeSheets(getNamaPS(id), n, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
+            kirimKeSheets(getNamaUnit(id), nInput.value, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
             document.getElementById('inputMenit' + id).value = "";
         }
 
@@ -330,8 +327,6 @@
                 } else {
                     clearInterval(dataPS[id].interval);
                     dataPS[id].detik = 0; dataPS[id].jalan = false;
-                    
-                    // Putar Suara
                     let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
                     let audio = audioResources[soundKey];
                     if (audio) { audio.loop = true; audio.play().catch(e => {}); }
@@ -359,21 +354,35 @@
 
         function pauseBilling(id) {
             let sisa = document.getElementById('timer' + id).innerText;
+            let pelanggan = document.getElementById('namaPelang' + id).value;
             updateCloud(id, false);
-            kirimKeSheets(getNamaPS(id), document.getElementById('namaPelang' + id).value, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisa);
+            kirimKeSheets(getNamaUnit(id), pelanggan, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisa);
         }
 
         function resetBilling(id) {
             if (!confirm("RESET TOTAL?")) return;
+            
             let sisa = document.getElementById('timer' + id).innerText;
-            kirimKeSheets(getNamaPS(id), document.getElementById('namaPelang' + id).value, "RESET (OFF)", "Rp " + dataPS[id].uangTerakhir, sisa);
+            let pelanggan = document.getElementById('namaPelang' + id).value;
+            let namaPS = getNamaUnit(id);
+            let totalUang = dataPS[id].uangTerakhir;
+
+            kirimKeSheets(namaPS, pelanggan, "RESET (OFF)", "Rp " + totalUang, sisa);
             
             dataPS[id].detik = 0; 
             dataPS[id].endTime = 0;
             dataPS[id].uangTerakhir = 0;
-            updateCloud(id, false);
-            document.getElementById('namaPelang' + id).value = "";
-            updateTampilan(id);
+            
+            // Urutan: Update Firebase DULU baru hapus input lokal
+            db.ref('ps_status/' + id).set({
+                endTime: 0,
+                jalan: false,
+                pelanggan: "",
+                uangTerakhir: 0
+            }).then(() => {
+                document.getElementById('namaPelang' + id).value = "";
+                updateTampilan(id);
+            });
         }
 
         function tampilkanPesanHabis(id, audio) {
