@@ -205,7 +205,14 @@
         function cekLogin() {
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
-            silentAudio.play().catch(() => {});
+
+            // --- TAMBAHAN FITUR: Pancing izin audio browser ---
+            let pancingan = ['suara/alarm.wav', 'suara/ps3.wav', 'suara/ps2.wav'];
+            pancingan.forEach(src => {
+                let a = new Audio(src);
+                a.volume = 0; 
+                a.play().then(() => a.pause()).catch(e => console.log("Audio Init"));
+            });
 
             if (input === PIN_KASIR) {
                 document.getElementById('loginLayer').style.display = "none";
