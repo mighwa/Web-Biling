@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Billing PS Online - QARINA 11";
 }
 
@@ -324,7 +324,11 @@
                     clearInterval(dataPS[id].interval);
                     dataPS[id].detik = 0;
                     dataPS[id].jalan = false;
-                    let soundFile = (id == 5 || id == 4 || id == 1) ? "/sounds/alarm.wav" : (id == 3 ? "/sounds/ps 3.wav" : "/sounds/ps 2.wav");
+                    
+                    // --- PERBAIKAN ALAMAT SUARA DISINI ---
+                    let folder = "/suara/"; 
+                    let soundFile = (id == 5 || id == 4 || id == 1) ? folder + "alarm.wav" : (id == 3 ? folder + "ps 3.wav" : folder + "ps 2.wav");
+                    
                     let audio = new Audio(soundFile);
                     audio.loop = true;
                     audio.play().catch(e => console.log("Klik layar!"));
