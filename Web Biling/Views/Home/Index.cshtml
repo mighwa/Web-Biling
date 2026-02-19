@@ -20,7 +20,7 @@
 
 <div id="mainBilling" style="display:none;">
     <div class="container-fluid py-3" style="background-color: #1a1a1a; min-height: 100vh; color: white;">
-        <h2 class="text-center text-warning mb-5 fw-bold"><span class="text-primary">QNR PLAYSTATION</h2>
+        <h2 class="text-center text-warning mb-5 fw-bold"><span class="text-primary">QNR PLAYSTATION</span></h2>
 
         <h3 class="text-warning border-bottom border-warning pb-2 mb-4">KATEGORI PS 4</h3>
         <div class="row g-3 mb-5">
@@ -141,7 +141,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
     <script>
-        // CONFIG FIREBASE TERBARU MILIK KAMU
         const firebaseConfig = {
             apiKey: "AIzaSyAkrE8CxVl7fY3w3i02H1pcoNijdS_T98c",
             authDomain: "billing-673f9.firebaseapp.com",
@@ -153,7 +152,6 @@
             measurementId: "G-FRDF68H4GQ"
         };
 
-        // Inisialisasi
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -170,7 +168,6 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null }
         };
 
-        // --- REALTIME SYNC: SINKRONISASI OTOMATIS ANTAR HP ---
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -228,7 +225,8 @@
                 document.getElementById('cooldown').innerText = waktuTunggu;
                 if (waktuTunggu <= 0) {
                     clearInterval(countdownInterval);
-                    isLocked = false; salahHitung = 0;
+                    isLocked = false;
+                    salahHitung = 0;
                     document.getElementById('loginForm').style.display = "block";
                     document.getElementById('lockMessage').style.display = "none";
                     document.getElementById('errorLogin').innerText = "";
@@ -244,10 +242,8 @@
             let namaPS = (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
 
             if (isNaN(uang) || uang <= 0) return;
-
             let tipeLaporan = (dataPS[id].detik <= 0) ? "MULAI MAIN" : "Input Uang";
 
-            // LOGIKA PAKET ASLI
             if (id == 2) {
                 if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
                 else if (uang >= 8000) tambahanDetik = (3 * 3600) + (((uang - 8000) / 3000) * 3600);
@@ -283,9 +279,7 @@
                 let sisaDetikSekarang = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) / 1000 : 0;
                 dataPS[id].detik = sisaDetikSekarang + tambahanDetik;
                 dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000);
-
                 updateCloud(id, true);
-
                 updateTampilan(id);
                 let sisaWaktuStr = document.getElementById('timer' + id).innerText;
                 kirimKeSheets(namaPS, pelanggan, tipeLaporan, "Rp " + uang, sisaWaktuStr);
@@ -300,13 +294,10 @@
             let namaPS = (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
 
             if (isNaN(menit) || menit <= 0) return;
-
             let sisaDetikSekarang = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) / 1000 : 0;
             dataPS[id].detik = sisaDetikSekarang + (menit * 60);
             dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000);
-
             updateCloud(id, true);
-
             updateTampilan(id);
             let sisaWaktuStr = document.getElementById('timer' + id).innerText;
             kirimKeSheets(namaPS, pelanggan, "Tambah Menit", menit + " mnt", sisaWaktuStr);
@@ -321,14 +312,11 @@
             document.getElementById('btnPlay' + id).style.display = "none";
             document.getElementById('btnStop' + id).style.display = "inline-block";
             document.getElementById('timer' + id).style.color = "";
-
             dataPS[id].jalan = true;
             clearInterval(dataPS[id].interval);
-
             dataPS[id].interval = setInterval(() => {
                 const sekarang = Date.now();
                 const sisaMs = dataPS[id].endTime - sekarang;
-
                 if (sisaMs > 0) {
                     dataPS[id].detik = Math.floor(sisaMs / 1000);
                     updateTampilan(id);
@@ -336,7 +324,6 @@
                     clearInterval(dataPS[id].interval);
                     dataPS[id].detik = 0;
                     dataPS[id].jalan = false;
-
                     let soundFile = (id == 5 || id == 4 || id == 1) ? "/sounds/alarm.wav" : (id == 3 ? "/sounds/ps 3.wav" : "/sounds/ps 2.wav");
                     let audio = new Audio(soundFile);
                     audio.loop = true;
@@ -366,7 +353,6 @@
         function pauseBilling(id) {
             if (dataPS[id].detik <= 0) return;
             updateCloud(id, false);
-
             let pelanggan = document.getElementById('namaPelang' + id).value || "Anonim";
             let sisaWaktu = document.getElementById('timer' + id).innerText;
             kirimKeSheets((id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)", pelanggan, "STOP/PAUSE", "-", sisaWaktu);
@@ -374,11 +360,9 @@
 
         function resetBilling(id) {
             if (!confirm("Yakin ingin RESET TOTAL? Data akan dicatat ke Laporan.")) return;
-
             let pelanggan = document.getElementById('namaPelang' + id).value || "Anonim";
             let sisaWaktu = document.getElementById('timer' + id).innerText;
             kirimKeSheets((id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)", pelanggan, "RESET (OFF)", "-", sisaWaktu);
-
             dataPS[id].detik = 0;
             dataPS[id].endTime = 0;
             updateCloud(id, false);
@@ -406,7 +390,6 @@
             }
             let notif = document.getElementById("notif-habis-" + id);
             if (notif) notif.remove();
-
             document.getElementById('btnPlay' + id).style.display = "none";
             document.getElementById('btnStop' + id).style.display = "inline-block";
             document.getElementById('timer' + id).style.color = "";
