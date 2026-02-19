@@ -207,7 +207,8 @@
             if (isLocked) return;
             let input = document.getElementById('pinInput').value;
 
-            // Pancing izin audio browser di sini
+            // --- PERBAIKAN: Pancing izin audio browser saat tombol klik ---
+            // Ini sangat penting agar suara bisa bunyi nanti
             silentAudio.play().catch(() => {});
 
             if (input === PIN_KASIR) {
@@ -332,12 +333,20 @@
                     dataPS[id].detik = 0;
                     dataPS[id].jalan = false;
                     
-                    let folder = "/suara/"; 
-                    let soundFile = (id == 5 || id == 4 || id == 1) ? folder + "alarm.wav" : (id == 3 ? folder + "ps3.wav" : folder + "ps2.wav");
+                    // --- PERBAIKAN PATH: Menggunakan path relatif (suara/...) ---
+                    let folder = "suara/"; 
+                    let soundFile = (id == 5 || id == 4 || id == 1) ? "alarm.wav" : (id == 3 ? "ps3.wav" : "ps2.wav");
+                    let fullPath = folder + soundFile;
                     
-                    let audio = new Audio(soundFile);
+                    let audio = new Audio(fullPath);
                     audio.loop = true;
-                    audio.play().catch(e => console.log("Klik layar!"));
+
+                    // Mencoba putar audio
+                    audio.play().catch(e => {
+                        console.log("Audio terblokir, menunggu interaksi user.");
+                        // Jika gagal (karena browser), notif di tampilkanPesanHabis akan memancing klik
+                    });
+
                     tampilkanPesanHabis(id, audio);
                 }
             }, 1000);
@@ -385,12 +394,18 @@
             let div = document.createElement("div");
             div.id = "notif-habis-" + id;
             div.style = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:red; color:white; padding:30px; border-radius:15px; text-align:center; z-index:9999; box-shadow: 0 0 20px black;";
+            
+            // --- PERBAIKAN: Menambahkan pesan klik ---
             div.innerHTML = `
-                <h2 class='mb-4 fw-bold'>WAKTU ${namaPS} HABIS!</h2>
+                <h2 class='mb-2 fw-bold'>WAKTU ${namaPS} HABIS!</h2>
+                <p class='mb-4'>Klik tombol di bawah untuk matikan suara</p>
                 <button class='btn btn-light btn-lg fw-bold' onclick="matikanAlarmManual(${id})">STOP ALARM</button>
             `;
             document.body.appendChild(div);
             window["audio_aktif_" + id] = audio;
+
+            // Jika audio gagal autoplay, klik tombol STOP ALARM akan memicu audio.play() 
+            // tapi karena kita ingin mematikan, ini hanya untuk memastikan status audio terpegang
         }
 
         function matikanAlarmManual(id) {
@@ -400,11 +415,11 @@
             }
             let notif = document.getElementById("notif-habis-" + id);
             if (notif) notif.remove();
+            
+            // Reset tampilan ke awal
             document.getElementById('btnPlay' + id).style.display = "none";
             document.getElementById('btnStop' + id).style.display = "inline-block";
             document.getElementById('timer' + id).style.color = "";
             document.getElementById('namaPelang' + id).value = "";
             updateTampilan(id);
         }
-    </script>
-}
