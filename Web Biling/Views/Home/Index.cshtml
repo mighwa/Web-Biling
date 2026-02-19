@@ -162,11 +162,11 @@
 
         let audioResources = {};
         let dataPS = {
-            5: { detik: 0, interval: null, jalan: false, endTime: null },
-            4: { detik: 0, interval: null, jalan: false, endTime: null },
-            3: { detik: 0, interval: null, jalan: false, endTime: null },
-            2: { detik: 0, interval: null, jalan: false, endTime: null },
-            1: { detik: 0, interval: null, jalan: false, endTime: null }
+            5: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
+            4: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
+            3: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
+            2: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
+            1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 }
         };
 
         // Firebase Sync
@@ -176,6 +176,7 @@
                 if (cloudData) {
                     const sekarang = Date.now();
                     document.getElementById('namaPelang' + id).value = cloudData.pelanggan || "";
+                    dataPS[id].uangTerakhir = cloudData.uangTerakhir || 0; // Sinkronkan uang akumulasi
                     if (cloudData.jalan && cloudData.endTime > sekarang) {
                         dataPS[id].endTime = cloudData.endTime;
                         dataPS[id].detik = Math.floor((cloudData.endTime - sekarang) / 1000);
@@ -191,7 +192,8 @@
             db.ref('ps_status/' + id).set({
                 endTime: dataPS[id].endTime || 0,
                 jalan: jalanStatus,
-                pelanggan: document.getElementById('namaPelang' + id).value
+                pelanggan: document.getElementById('namaPelang' + id).value,
+                uangTerakhir: dataPS[id].uangTerakhir // Simpan uang akumulasi ke Firebase
             });
         }
 
@@ -254,9 +256,15 @@
 
             if (isNaN(uang) || uang <= 0) return;
 
+            // AKUMULASI UANG: Jika timer habis, mulai dari 0. Jika sedang main, tambah terus.
+            if (dataPS[id].detik <= 0) {
+                dataPS[id].uangTerakhir = uang;
+            } else {
+                dataPS[id].uangTerakhir += uang;
+            }
+
             let tipeLaporan = (dataPS[id].detik <= 0) ? "MULAI MAIN" : "Input Uang";
 
-            // Logika Harga Tetap Sama
             if (id == 2) { 
                 if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
                 else if (uang >= 8000) tambahanDetik = (3 * 3600) + (((uang - 8000) / 3000) * 3600);
@@ -289,7 +297,7 @@
                 dataPS[id].endTime = Date.now() + sisaMs + (tambahanDetik * 1000);
                 updateCloud(id, true);
                 updateTampilan(id);
-                kirimKeSheets(namaPS, pelanggan, tipeLaporan, "Rp " + uang, document.getElementById('timer' + id).innerText);
+                kirimKeSheets(namaPS, pelanggan, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
                 input.value = "";
             }
         }
@@ -304,7 +312,8 @@
             dataPS[id].endTime = Date.now() + sisaMs + (menit * 60 * 1000);
             updateCloud(id, true);
             updateTampilan(id);
-            kirimKeSheets(getNamaPS(id), pelanggan, "Tambah Menit", menit + " mnt", document.getElementById('timer' + id).innerText);
+            // Tetap kirim total uang akumulasi saat tambah menit
+            kirimKeSheets(getNamaPS(id), pelanggan, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
             inputMnt.value = "";
         }
 
@@ -353,7 +362,8 @@
             let sisaWaktu = document.getElementById('timer' + id).innerText;
             updateCloud(id, false);
             let pelanggan = document.getElementById('namaPelang' + id).value;
-            kirimKeSheets(getNamaPS(id), pelanggan, "STOP/PAUSE", "-", sisaWaktu);
+            // Kirim total uang akumulasi, bukan "-"
+            kirimKeSheets(getNamaPS(id), pelanggan, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisaWaktu);
         }
 
         function resetBilling(id) {
@@ -361,11 +371,12 @@
             let sisaWaktu = document.getElementById('timer' + id).innerText;
             let pelanggan = document.getElementById('namaPelang' + id).value;
             
-            // Kirim laporan sisa terakhir ke Sheets sebelum di-nolkan
-            kirimKeSheets(getNamaPS(id), pelanggan, "RESET (OFF)", "-", sisaWaktu);
+            // Kirim total uang terakhir sebelum benar-benar di-reset
+            kirimKeSheets(getNamaPS(id), pelanggan, "RESET (OFF)", "Rp " + dataPS[id].uangTerakhir, sisaWaktu);
             
             dataPS[id].detik = 0; 
             dataPS[id].endTime = 0;
+            dataPS[id].uangTerakhir = 0; // Kembalikan ke 0 setelah sesi selesai
             updateCloud(id, false);
             document.getElementById('namaPelang' + id).value = "";
             updateTampilan(id);
