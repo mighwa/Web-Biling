@@ -7,8 +7,4 @@
     <RootNamespace>Penagihan_Web</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="wwwroot\**" CopyToPublishDirectory="Always" />
-  </ItemGroup>
-
 </Project>
