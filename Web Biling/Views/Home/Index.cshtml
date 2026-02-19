@@ -141,18 +141,19 @@
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
     <script>
-        // --- CONFIG FIREBASE ---
+        // CONFIG FIREBASE TERBARU MILIK KAMU
         const firebaseConfig = {
-            apiKey: "AIzaSyBW-qHBdnIw-6txC3YTlWIrDllIFUoBu3k",
-            authDomain: "billingqarina.firebaseapp.com",
-            databaseURL: "https://billingqarina-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "billingqarina",
-            storageBucket: "billingqarina.firebasestorage.app",
-            messagingSenderId: "947388570823",
-            appId: "1:947388570823:web:8f226641dc3b6c31acf2e2",
-            measurementId: "G-04P62260XQ"
+            apiKey: "AIzaSyAkrE8CxVl7fY3w3i02H1pcoNijdS_T98c",
+            authDomain: "billing-673f9.firebaseapp.com",
+            databaseURL: "https://billing-673f9-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "billing-673f9",
+            storageBucket: "billing-673f9.firebasestorage.app",
+            messagingSenderId: "1041504562376",
+            appId: "1:1041504562376:web:1764bbc34b8bee1cbb49fd",
+            measurementId: "G-FRDF68H4GQ"
         };
 
+        // Inisialisasi
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
@@ -169,7 +170,7 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null }
         };
 
-        // --- REALTIME SYNC: MENDENGARKAN PERUBAHAN DARI FIREBASE ---
+        // --- REALTIME SYNC: SINKRONISASI OTOMATIS ANTAR HP ---
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -346,7 +347,7 @@
         }
 
         function updateTampilan(id) {
-            let s = Math.max(0, dataPS[id].detik);
+            let s = dataPS[id].detik;
             let h = Math.floor(s / 3600).toString().padStart(2, '0');
             let m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
             let sec = (s % 60).toString().padStart(2, '0');
