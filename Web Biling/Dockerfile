@@ -1,19 +1,24 @@
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 80
-
+# Gunakan SDK .NET 8 untuk tahap build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-# Ganti Web-Biling1.csproj jika nama file proyekmu berbeda
-COPY ["Web-Biling1.csproj", "."]
-RUN dotnet restore "./Web-Biling1.csproj"
-COPY . .
-RUN dotnet build "Web-Biling1.csproj" -c Release -o /app/build
-
-FROM build AS publish
-RUN dotnet publish "Web-Biling1.csproj" -c Release -o /app/publish
-
-FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Web-Biling1.dll"]
+
+# 1. Salin file project (.csproj) saja dulu untuk restore (biar cepat)
+# Gunakan wildcard (*) supaya dia mencari file .csproj apa pun namanya
+COPY *.csproj ./
+RUN dotnet restore
+
+# 2. Salin semua file lainnya dari laptop/github ke dalam folder /app di Docker
+COPY . ./
+
+# 3. Build dan publish aplikasinya ke folder bernama 'out'
+RUN dotnet publish -c Release -o out
+
+# 4. Gunakan ASP.NET Runtime (ukuran lebih kecil) untuk menjalankan aplikasi
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+
+# Salin hasil build dari tahap sebelumnya
+COPY --from=build /app/out .
+
+# 5. Jalankan aplikasi (Ganti 'Web-Biling.dll' jika nama file aslimu berbeda)
+ENTRYPOINT ["dotnet", "Web-Biling.dll"]
