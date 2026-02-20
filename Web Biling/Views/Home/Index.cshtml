@@ -160,7 +160,7 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbxWD59ogrxR_EwEevWq92xPG0wUWLWrScy7MZiMv4HBK_byZ-fQ723cWdtPb7IWDAMVdQ/exec";
 
-        // LINK AUDIO
+        // AUDIO
         const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
         const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
         const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
@@ -174,6 +174,7 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 }
         };
 
+        // Firebase Sync (FITUR ANTI RESET REFRESH)
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -181,11 +182,18 @@
                     const sekarang = Date.now();
                     document.getElementById('namaPelang' + id).value = cloudData.pelanggan || "";
                     dataPS[id].uangTerakhir = cloudData.uangTerakhir || 0;
-                    if (cloudData.jalan && cloudData.endTime > sekarang) {
+                    
+                    if (cloudData.jalan) {
                         dataPS[id].endTime = cloudData.endTime;
                         dataPS[id].detik = Math.floor((cloudData.endTime - sekarang) / 1000);
-                        if (!dataPS[id].jalan) mulaiMundurLokal(id);
-                    } else if (!cloudData.jalan) {
+                        if (dataPS[id].detik > 0) {
+                            if (!dataPS[id].jalan) mulaiMundurLokal(id);
+                        } else {
+                            berhentiMundurLokal(id);
+                        }
+                    } else {
+                        // Jika status STOP, ambil detik tersisa dari cloud agar tidak jadi 0 saat refresh
+                        dataPS[id].detik = cloudData.detikTersisa || 0;
                         berhentiMundurLokal(id);
                     }
                 }
@@ -193,11 +201,14 @@
         }
 
         function updateCloud(id, jalanStatus) {
+            // Jika STOP (false), simpan detik saat ini ke 'detikTersisa'
+            let sisaDetik = (jalanStatus) ? 0 : dataPS[id].detik;
             db.ref('ps_status/' + id).set({
                 endTime: dataPS[id].endTime || 0,
                 jalan: jalanStatus,
                 pelanggan: document.getElementById('namaPelang' + id).value,
-                uangTerakhir: dataPS[id].uangTerakhir
+                uangTerakhir: dataPS[id].uangTerakhir,
+                detikTersisa: sisaDetik
             });
         }
 
@@ -291,8 +302,8 @@
             }
 
             if (tambahanDetik > 0) {
-                let sisaMs = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) : 0;
-                dataPS[id].endTime = Date.now() + sisaMs + (tambahanDetik * 1000);
+                // Kalkulasi endTime baru dari detik yang ada sekarang
+                dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000) + (tambahanDetik * 1000);
                 updateCloud(id, true);
                 updateTampilan(id);
                 kirimKeSheets(namaPS, nInput.value, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
@@ -305,8 +316,8 @@
             if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
             let mnt = parseInt(document.getElementById('inputMenit' + id).value);
             if (isNaN(mnt) || mnt <= 0) return;
-            let sisaMs = (dataPS[id].endTime > Date.now()) ? (dataPS[id].endTime - Date.now()) : 0;
-            dataPS[id].endTime = Date.now() + sisaMs + (mnt * 60 * 1000);
+            
+            dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000) + (mnt * 60 * 1000);
             updateCloud(id, true);
             updateTampilan(id);
             kirimKeSheets(getNamaUnit(id), nInput.value, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
@@ -327,10 +338,12 @@
                 } else {
                     clearInterval(dataPS[id].interval);
                     dataPS[id].detik = 0; dataPS[id].jalan = false;
+                    
                     let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
                     let audio = audioResources[soundKey];
                     if (audio) { audio.loop = true; audio.play().catch(e => {}); }
                     tampilkanPesanHabis(id, audio);
+                    updateCloud(id, false);
                 }
             }, 1000);
         }
@@ -355,6 +368,7 @@
         function pauseBilling(id) {
             let sisa = document.getElementById('timer' + id).innerText;
             let pelanggan = document.getElementById('namaPelang' + id).value;
+            // Penting: Update cloud dengan status jalan=false akan menyimpan detikTersisa
             updateCloud(id, false);
             kirimKeSheets(getNamaUnit(id), pelanggan, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisa);
         }
@@ -373,12 +387,12 @@
             dataPS[id].endTime = 0;
             dataPS[id].uangTerakhir = 0;
             
-            // Urutan: Update Firebase DULU baru hapus input lokal
             db.ref('ps_status/' + id).set({
                 endTime: 0,
                 jalan: false,
                 pelanggan: "",
-                uangTerakhir: 0
+                uangTerakhir: 0,
+                detikTersisa: 0
             }).then(() => {
                 document.getElementById('namaPelang' + id).value = "";
                 updateTampilan(id);
