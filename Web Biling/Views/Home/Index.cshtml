@@ -2,6 +2,9 @@
     ViewData["Title"] = "Billing PS Online - QARINA 11";
 }
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffc107">
+
 <div id="loginLayer" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#121212; z-index:10000; display:flex; flex-direction:column; justify-content:center; align-items:center; color:white;">
     <h2 class="text-warning mb-4 fw-bold">PIN KASIR</h2>
     <div id="loginForm" class="text-center">
@@ -20,6 +23,11 @@
 
 <div id="mainBilling" style="display:none;">
     <div class="container-fluid py-3" style="background-color: #1a1a1a; min-height: 100vh; color: white;">
+        
+        <div id="btnNotif" class="alert alert-warning text-center fw-bold" style="cursor:pointer; font-size: 0.9rem;" onclick="mintaIzinNotif()">
+             🚨 KLIK DI SINI UNTUK AKTIFKAN ALARM HP 🚨
+        </div>
+
         <h2 class="text-center text-warning mb-5 fw-bold"><span class="text-primary">QNR PLAYSTATION</span></h2>
 
         <h3 class="text-warning border-bottom border-warning pb-2 mb-4">KATEGORI PS 4</h3>
@@ -160,7 +168,6 @@
         let isLocked = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbxWD59ogrxR_EwEevWq92xPG0wUWLWrScy7MZiMv4HBK_byZ-fQ723cWdtPb7IWDAMVdQ/exec";
 
-        // LINK AUDIO
         const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
         const linkPS3 = "https://www.dropbox.com/scl/fi/bi8orjmy5nhyz2kq9ov86/ps3.wav?rlkey=hvq2ajpcwy0njdnnx64ap7beg&st=83l81qvo&raw=1";
         const linkPS2 = "https://www.dropbox.com/scl/fi/ml7d5aj1mkf0qyxmlapj0/ps2.wav?rlkey=575ya6fwbkbv87p1he6qous8k&st=mc1u9din&raw=1";
@@ -174,7 +181,36 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 }
         };
 
-        // Sinkronisasi Firebase
+        // REGISTRASI PWA SERVICE WORKER
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(() => console.log("SW Terdaftar"));
+        }
+
+        function mintaIzinNotif() {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    document.getElementById('btnNotif').style.display = 'none';
+                    new Notification("QNR PLAYSTATION", { body: "Alarm HP Aktif!" });
+                }
+            });
+        }
+
+        function kirimNotifHP(id) {
+            if (Notification.permission === "granted") {
+                const nama = document.getElementById('namaPelang' + id).value || "Pelanggan";
+                const unit = getNamaUnit(id);
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification("WAKTU HABIS! 🚨", {
+                        body: `${nama} di ${unit} selesai!`,
+                        icon: "https://cdn-icons-png.flaticon.com/512/681/681123.png",
+                        vibrate: [500, 100, 500],
+                        tag: "ps-" + id,
+                        renotify: true
+                    });
+                });
+            }
+        }
+
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -200,11 +236,9 @@
         }
 
         function updateCloud(id, jalanStatus) {
-            // FIX: Jika lanjut (Play), hitung endTime BARU dari sisa detik di layar
             if (jalanStatus) {
                 dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000);
             }
-
             db.ref('ps_status/' + id).set({
                 endTime: dataPS[id].endTime || 0,
                 jalan: jalanStatus,
@@ -258,13 +292,12 @@
         }
 
         function getNamaUnit(id) {
-            return (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (A)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (Lebih)";
+            return (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (1 Player)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (2 Player)";
         }
 
         function hitungHarga(id) {
             let nInput = document.getElementById('namaPelang' + id);
             if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
-
             let input = document.getElementById('input' + id);
             let uang = parseInt(input.value);
             if (isNaN(uang) || uang <= 0) return;
@@ -316,25 +349,17 @@
             if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
             let mnt = parseInt(document.getElementById('inputMenit' + id).value);
             if (isNaN(mnt) || mnt <= 0) return;
-            
             dataPS[id].detik += (mnt * 60);
             updateCloud(id, true);
             kirimKeSheets(getNamaUnit(id), nInput.value, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
             document.getElementById('inputMenit' + id).value = "";
         }
 
-        // FUNGSI MULAI / LANJUT
         function mulaiMundurLokal(id, dariFirebase = false) {
-            if (!dariFirebase) {
-                // Trigger update ke Firebase jika tombol ditekan manual
-                updateCloud(id, true);
-                return; 
-            }
-
+            if (!dariFirebase) { updateCloud(id, true); return; }
             document.getElementById('btnPlay' + id).style.display = "none";
             document.getElementById('btnStop' + id).style.display = "inline-block";
             document.getElementById('timer' + id).style.color = "";
-            
             dataPS[id].jalan = true;
             clearInterval(dataPS[id].interval);
             dataPS[id].interval = setInterval(() => {
@@ -347,10 +372,12 @@
                     dataPS[id].interval = null;
                     dataPS[id].detik = 0; 
                     dataPS[id].jalan = false;
-                    
                     let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
                     let audio = audioResources[soundKey];
                     if (audio) { audio.loop = true; audio.play().catch(e => {}); }
+                    
+                    // PANGGIL NOTIFIKASI HP
+                    kirimNotifHP(id);
                     tampilkanPesanHabis(id, audio);
                     updateCloud(id, false);
                 }
@@ -384,24 +411,14 @@
 
         function resetBilling(id) {
             if (!confirm("RESET TOTAL?")) return;
-            
             let sisa = document.getElementById('timer' + id).innerText;
             let pelanggan = document.getElementById('namaPelang' + id).value;
             let namaPS = getNamaUnit(id);
             let totalUang = dataPS[id].uangTerakhir;
-
             kirimKeSheets(namaPS, pelanggan, "RESET (OFF)", "Rp " + totalUang, sisa);
-            
-            dataPS[id].detik = 0; 
-            dataPS[id].endTime = 0;
-            dataPS[id].uangTerakhir = 0;
-            
+            dataPS[id].detik = 0; dataPS[id].endTime = 0; dataPS[id].uangTerakhir = 0;
             db.ref('ps_status/' + id).set({
-                endTime: 0,
-                jalan: false,
-                pelanggan: "",
-                uangTerakhir: 0,
-                detikTersisa: 0
+                endTime: 0, jalan: false, pelanggan: "", uangTerakhir: 0, detikTersisa: 0
             }).then(() => {
                 document.getElementById('namaPelang' + id).value = "";
                 updateTampilan(id);
@@ -415,7 +432,7 @@
             div.style = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:red; color:white; padding:30px; border-radius:15px; text-align:center; z-index:9999; border: 5px solid white;";
             div.innerHTML = `
                 <h1 class='fw-bold'>WAKTU HABIS!</h1>
-                <p>Silakan periksa unit ${getNamaUnit(id)} Anda.</p>
+                <p>Unit ${getNamaUnit(id)} Selesai.</p>
                 <button class='btn btn-light btn-lg fw-bold' onclick="matikanAlarmManual(${id})">MATIKAN ALARM</button>
             `;
             document.body.appendChild(div);
