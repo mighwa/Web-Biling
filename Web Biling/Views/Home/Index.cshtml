@@ -9,6 +9,14 @@
     <h2 class="text-warning mb-4 fw-bold">PIN KASIR</h2>
     <div id="loginForm" class="text-center">
         <input type="password" id="pinInput" class="form-control text-center mb-3" style="width:250px; font-size:2.5rem; letter-spacing: 10px;" placeholder="****">
+
+        <div class="form-check text-start mb-3" style="width: 250px; margin: 0 auto;">
+            <input class="form-check-input" type="checkbox" id="stayLoggedIn">
+            <label class="form-check-label text-white" for="stayLoggedIn" style="cursor:pointer; font-size: 0.9rem;">
+                Ingat Saya (Tetap Masuk)
+            </label>
+        </div>
+
         <button class="btn btn-warning btn-lg w-100 fw-bold" onclick="cekLogin()">MASUK</button>
         <div class="mt-3">
             <p id="errorLogin" class="text-danger fw-bold" style="display:none;"></p>
@@ -37,16 +45,19 @@
                     <div class="card-body text-center">
                         <input type="text" id="namaPelang4" class="form-control mb-2 bg-secondary text-white border-0 text-center fw-bold" placeholder="Nama Pelanggan (Wajib)...">
                         <h4 class="text-warning fw-bold">PS 4 (1 Player)</h4>
-                        <div id="timer4" class="display-4 fw-bold text-success my-3">00:00:00</div>
+                        <div id="timer4" class="display-4 fw-bold text-success mt-2 mb-0">00:00:00</div>
+                        <div class="small text-warning fw-bold mb-3" id="sisaUang4">Sisa: Rp 0</div>
                         <div class="btn-group w-100 mb-3">
                             <button id="btnPlay4" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(4)">▶ PLAY</button>
                             <button id="btnStop4" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(4)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input4" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
-                        <input type="number" id="inputMenit4" class="form-control mb-3 text-center" placeholder="Tambah Menit">
+                        <button class="btn btn-success btn-lg w-100 mb-3" onclick="hitungHarga(4)">+ UANG</button>
+
+                        <input type="number" step="0.01" id="inputMenit4" class="form-control mb-2 text-center" placeholder="Contoh: 1.30 (1m 30d)">
                         <div class="btn-group w-100 mb-3">
-                            <button class="btn btn-success btn-lg" onclick="hitungHarga(4)">+ UANG</button>
-                            <button class="btn btn-primary btn-lg" onclick="tambahMenit(4)">+ MENIT</button>
+                            <button class="btn btn-primary" onclick="kontrolWaktu(4, 'tambah')">+ WAKTU</button>
+                            <button class="btn btn-danger" onclick="kontrolWaktu(4, 'kurang')">- WAKTU</button>
                         </div>
                         <button class="btn btn-outline-danger w-100 fw-bold" onclick="resetBilling(4)">RESET TOTAL</button>
                     </div>
@@ -57,16 +68,19 @@
                     <div class="card-body text-center">
                         <input type="text" id="namaPelang1" class="form-control mb-2 bg-secondary text-white border-0 text-center fw-bold" placeholder="Nama Pelanggan (Wajib)...">
                         <h4 class="text-danger fw-bold">PS 4 (2 Player)</h4>
-                        <div id="timer1" class="display-4 fw-bold text-danger my-3">00:00:00</div>
+                        <div id="timer1" class="display-4 fw-bold text-danger mt-2 mb-0">00:00:00</div>
+                        <div class="small text-danger fw-bold mb-3" id="sisaUang1">Sisa: Rp 0</div>
                         <div class="btn-group w-100 mb-3">
                             <button id="btnPlay1" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(1)">▶ PLAY</button>
                             <button id="btnStop1" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(1)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input1" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
-                        <input type="number" id="inputMenit1" class="form-control mb-3 text-center" placeholder="Tambah Menit">
+                        <button class="btn btn-danger btn-lg w-100 mb-3" onclick="hitungHarga(1)">+ UANG</button>
+
+                        <input type="number" step="0.01" id="inputMenit1" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
-                            <button class="btn btn-danger btn-lg" onclick="hitungHarga(1)">+ UANG</button>
-                            <button class="btn btn-primary btn-lg" onclick="tambahMenit(1)">+ MENIT</button>
+                            <button class="btn btn-primary" onclick="kontrolWaktu(1, 'tambah')">+ WAKTU</button>
+                            <button class="btn btn-danger" onclick="kontrolWaktu(1, 'kurang')">- WAKTU</button>
                         </div>
                         <button class="btn btn-outline-danger w-100 fw-bold" onclick="resetBilling(1)">RESET TOTAL</button>
                     </div>
@@ -81,16 +95,19 @@
                     <div class="card-body text-center">
                         <input type="text" id="namaPelang3" class="form-control mb-2 bg-secondary text-white border-0 text-center fw-bold" placeholder="Nama Pelanggan (Wajib)...">
                         <h4 class="text-info fw-bold">Playstation 3</h4>
-                        <div id="timer3" class="display-4 fw-bold text-info my-3">00:00:00</div>
+                        <div id="timer3" class="display-4 fw-bold text-info mt-2 mb-0">00:00:00</div>
+                        <div class="small text-info fw-bold mb-3" id="sisaUang3">Sisa: Rp 0</div>
                         <div class="btn-group w-100 mb-3">
                             <button id="btnPlay3" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(3)">▶ PLAY</button>
                             <button id="btnStop3" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(3)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input3" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
-                        <input type="number" id="inputMenit3" class="form-control mb-3 text-center" placeholder="Tambah Menit">
+                        <button class="btn btn-info btn-lg w-100 mb-3" onclick="hitungHarga(3)">+ UANG</button>
+
+                        <input type="number" step="0.01" id="inputMenit3" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
-                            <button class="btn btn-info btn-lg" onclick="hitungHarga(3)">+ UANG</button>
-                            <button class="btn btn-primary btn-lg" onclick="tambahMenit(3)">+ MENIT</button>
+                            <button class="btn btn-primary" onclick="kontrolWaktu(3, 'tambah')">+ WAKTU</button>
+                            <button class="btn btn-danger" onclick="kontrolWaktu(3, 'kurang')">- WAKTU</button>
                         </div>
                         <button class="btn btn-outline-danger w-100 fw-bold" onclick="resetBilling(3)">RESET TOTAL</button>
                     </div>
@@ -101,16 +118,19 @@
                     <div class="card-body text-center">
                         <input type="text" id="namaPelang2" class="form-control mb-2 bg-secondary text-white border-0 text-center fw-bold" placeholder="Nama Pelanggan (Wajib)...">
                         <h4 class="text-white fw-bold">Playstation 2</h4>
-                        <div id="timer2" class="display-4 fw-bold text-white my-3">00:00:00</div>
+                        <div id="timer2" class="display-4 fw-bold text-white mt-2 mb-0">00:00:00</div>
+                        <div class="small text-white fw-bold mb-3" id="sisaUang2">Sisa: Rp 0</div>
                         <div class="btn-group w-100 mb-3">
                             <button id="btnPlay2" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(2)">▶ PLAY</button>
                             <button id="btnStop2" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(2)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input2" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
-                        <input type="number" id="inputMenit2" class="form-control mb-3 text-center" placeholder="Tambah Menit">
+                        <button class="btn btn-secondary btn-lg w-100 mb-3" onclick="hitungHarga(2)">+ UANG</button>
+
+                        <input type="number" step="0.01" id="inputMenit2" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
-                            <button class="btn btn-secondary btn-lg" onclick="hitungHarga(2)">+ UANG</button>
-                            <button class="btn btn-primary btn-lg" onclick="tambahMenit(2)">+ MENIT</button>
+                            <button class="btn btn-primary" onclick="kontrolWaktu(2, 'tambah')">+ WAKTU</button>
+                            <button class="btn btn-danger" onclick="kontrolWaktu(2, 'kurang')">- WAKTU</button>
                         </div>
                         <button class="btn btn-outline-danger w-100 fw-bold" onclick="resetBilling(2)">RESET TOTAL</button>
                     </div>
@@ -125,21 +145,28 @@
                     <div class="card-body text-center">
                         <input type="text" id="namaPelang5" class="form-control mb-2 bg-secondary text-white border-0 text-center fw-bold" placeholder="Nama Pelanggan (Wajib)...">
                         <h4 class="text-light fw-bold">Unit PS 5</h4>
-                        <div id="timer5" class="display-4 fw-bold text-info my-3">00:00:00</div>
+                        <div id="timer5" class="display-4 fw-bold text-info mt-2 mb-0">00:00:00</div>
+                        <div class="small text-info fw-bold mb-3" id="sisaUang5">Sisa: Rp 0</div>
                         <div class="btn-group w-100 mb-3">
                             <button id="btnPlay5" class="btn btn-warning fw-bold" onclick="mulaiMundurLokal(5)">▶ PLAY</button>
                             <button id="btnStop5" class="btn btn-outline-warning fw-bold" onclick="pauseBilling(5)">⏸ STOP</button>
                         </div>
                         <input type="number" id="input5" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
-                        <input type="number" id="inputMenit5" class="form-control mb-3 text-center" placeholder="Tambah Menit">
+                        <button class="btn btn-info btn-lg text-white" onclick="hitungHarga(5)">+ UANG</button>
+
+                        <input type="number" step="0.01" id="inputMenit5" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
-                            <button class="btn btn-info btn-lg text-white" onclick="hitungHarga(5)">+ UANG</button>
-                            <button class="btn btn-primary btn-lg" onclick="tambahMenit(5)">+ MENIT</button>
+                            <button class="btn btn-primary" onclick="kontrolWaktu(5, 'tambah')">+ WAKTU</button>
+                            <button class="btn btn-danger" onclick="kontrolWaktu(5, 'kurang')">- WAKTU</button>
                         </div>
                         <button class="btn btn-outline-danger w-100 fw-bold" onclick="resetBilling(5)">RESET TOTAL</button>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <button class="btn btn-sm btn-outline-secondary" onclick="logoutBilling()">Log Out dari Perangkat Ini</button>
         </div>
     </div>
 </div>
@@ -166,6 +193,7 @@
         const PIN_KASIR = "1234";
         let salahHitung = 0;
         let isLocked = false;
+        let audioSudahAktif = false;
         const URL_SPREADSHEET = "https://script.google.com/macros/s/AKfycbx4pU5PYgWUq6FWzjH9WZhYMy-7KFHhplMSRoKDeonbN7n2RMatEf36A_bnOVkfnrgWJw/exec";
 
         const linkAlarm = "https://www.dropbox.com/scl/fi/hqisovs2t5114lucgrwpt/alarm.wav?rlkey=80jhtfu9h8b0a1a6k6twmbexr&st=nq0mvu69&raw=1";
@@ -174,12 +202,76 @@
 
         let audioResources = {};
         let dataPS = {
-            5: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
-            4: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
-            3: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
-            2: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 },
-            1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0 }
+            5: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 10000 },
+            4: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 5000 },
+            3: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 4000 },
+            2: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 3000 },
+            1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 6000 }
         };
+
+        window.addEventListener('load', function() {
+            if (localStorage.getItem("billing_logged_in") === "true") { masukKeSistem(); }
+        });
+
+        function masukKeSistem() {
+            document.getElementById('loginLayer').style.display = "none";
+            document.getElementById('mainBilling').style.display = "block";
+        }
+
+        function pancingAudio() {
+            if (audioSudahAktif) return;
+            const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
+            for (let key in sounds) {
+                let a = new Audio(sounds[key]);
+                a.volume = 0;
+                a.play().then(() => {
+                    a.pause(); a.currentTime = 0; a.volume = 1;
+                    audioResources[key] = a;
+                }).catch(e => {});
+            }
+            audioSudahAktif = true;
+        }
+
+        function logoutBilling() {
+            if(confirm("Keluar dan minta PIN lagi?")) {
+                localStorage.removeItem("billing_logged_in");
+                location.reload();
+            }
+        }
+
+        function konversiInputKeDetik(val) {
+            let strVal = val.toString();
+            if (strVal.includes('.')) {
+                let parts = strVal.split('.');
+                let mnt = parseInt(parts[0]) || 0;
+                let dtk = parseInt(parts[1]) || 0;
+                return (mnt * 60) + dtk;
+            } else {
+                return parseInt(val) * 60;
+            }
+        }
+
+        function kontrolWaktu(id, aksi) {
+            pancingAudio();
+            let nInput = document.getElementById('namaPelang' + id);
+            if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
+
+            let val = document.getElementById('inputMenit' + id).value;
+            if (!val || isNaN(val)) return;
+
+            let totalDetikBerubah = konversiInputKeDetik(val);
+
+            if (aksi === 'tambah') {
+                dataPS[id].detik += totalDetikBerubah;
+            } else {
+                dataPS[id].detik -= totalDetikBerubah;
+                if (dataPS[id].detik < 0) dataPS[id].detik = 0;
+            }
+
+            updateCloud(id, true);
+            kirimKeSheets(getNamaUnit(id), nInput.value, (aksi === 'tambah' ? "Tambah Waktu" : "Kurang Waktu"), val, document.getElementById('timer' + id).innerText);
+            document.getElementById('inputMenit' + id).value = "";
+        }
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/sw.js').then(() => console.log("SW Terdaftar"));
@@ -253,17 +345,11 @@
 
         function cekLogin() {
             if (isLocked) return;
+            pancingAudio();
             let input = document.getElementById('pinInput').value;
-            const sounds = { 'alarm': linkAlarm, 'ps3': linkPS3, 'ps2': linkPS2 };
-            for (let key in sounds) {
-                let a = new Audio(sounds[key]);
-                a.volume = 0;
-                a.play().then(() => { a.pause(); a.currentTime = 0; a.volume = 1; audioResources[key] = a; }).catch(e => {});
-            }
-
             if (input === PIN_KASIR) {
-                document.getElementById('loginLayer').style.display = "none";
-                document.getElementById('mainBilling').style.display = "block";
+                if (document.getElementById('stayLoggedIn').checked) localStorage.setItem("billing_logged_in", "true");
+                masukKeSistem();
             } else {
                 salahHitung++;
                 document.getElementById('errorLogin').style.display = "block";
@@ -295,6 +381,7 @@
         }
 
         function hitungHarga(id) {
+            pancingAudio();
             let nInput = document.getElementById('namaPelang' + id);
             if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
             let input = document.getElementById('input' + id);
@@ -338,24 +425,13 @@
             if (tambahanDetik > 0) {
                 dataPS[id].detik += tambahanDetik;
                 updateCloud(id, true);
-                kirimKeSheets(namaPS, nInput.value, tipeLaporan, "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
+                kirimKeSheets(getNamaUnit(id), nInput.value, tipeLaporan, "Rp " + uang, document.getElementById('timer' + id).innerText);
                 input.value = "";
             }
         }
 
-        function tambahMenit(id) {
-            let nInput = document.getElementById('namaPelang' + id);
-            if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
-            let mnt = parseInt(document.getElementById('inputMenit' + id).value);
-            if (isNaN(mnt) || mnt <= 0) return;
-            dataPS[id].detik += (mnt * 60);
-            updateCloud(id, true);
-            kirimKeSheets(getNamaUnit(id), nInput.value, "Tambah Menit", "Rp " + dataPS[id].uangTerakhir, document.getElementById('timer' + id).innerText);
-            document.getElementById('inputMenit' + id).value = "";
-        }
-
         function mulaiMundurLokal(id, dariFirebase = false) {
-            if (!dariFirebase) { updateCloud(id, true); return; }
+            if (!dariFirebase) { pancingAudio(); updateCloud(id, true); return; }
             document.getElementById('btnPlay' + id).style.display = "none";
             document.getElementById('btnStop' + id).style.display = "inline-block";
             document.getElementById('timer' + id).style.color = "";
@@ -368,35 +444,17 @@
                     updateTampilan(id);
                 } else {
                     const nInput = document.getElementById('namaPelang' + id);
-                    const pelanggan = nInput.value || "Pelanggan";
-                    const unit = getNamaUnit(id);
-                    const totalUang = dataPS[id].uangTerakhir;
-
-                    clearInterval(dataPS[id].interval);
-                    dataPS[id].interval = null;
-                    dataPS[id].detik = 0;
-                    dataPS[id].jalan = false;
-
-                    // FITUR BARU: LAPORAN SELESAI
-                    kirimKeSheets(unit, pelanggan, "SELESAI", "Rp " + totalUang, "00:00:00");
-
+                    kirimKeSheets(getNamaUnit(id), nInput.value || "Pelanggan", "SELESAI", "-", "00:00:00");
                     let soundKey = (id == 5 || id == 4 || id == 1) ? 'alarm' : (id == 3 ? 'ps3' : 'ps2');
                     let audio = audioResources[soundKey];
                     if (audio) { audio.loop = true; audio.play().catch(e => {}); }
-
-                    // FITUR BARU: AUTO RESET FIREBASE DAN LAYAR
-                    dataPS[id].uangTerakhir = 0;
-                    dataPS[id].endTime = 0;
-                    db.ref('ps_status/' + id).set({
-                        endTime: 0, jalan: false, pelanggan: "", uangTerakhir: 0, detikTersisa: 0
-                    }).then(() => {
-                        nInput.value = ""; // Membersihkan nama di layar
-                        updateTampilan(id);
-                        berhentiMundurLokal(id);
+                    dataPS[id].uangTerakhir = 0; dataPS[id].endTime = 0;
+                    db.ref('ps_status/' + id).set({ endTime: 0, jalan: false, pelanggan: "", uangTerakhir: 0, detikTersisa: 0 }).then(() => {
+                        nInput.value = ""; updateTampilan(id); berhentiMundurLokal(id);
                     });
-
                     kirimNotifHP(id);
-                    tampilkanPesanHabis(id, audio, pelanggan, unit);
+                    tampilkanPesanHabis(id, audio, nInput.value || "Pelanggan", getNamaUnit(id));
+                    clearInterval(dataPS[id].interval);
                 }
             }, 1000);
         }
@@ -407,6 +465,11 @@
             let m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
             let sec = (s % 60).toString().padStart(2, '0');
             document.getElementById('timer' + id).innerText = `${h}:${m}:${sec}`;
+
+            // SISA UANG KECIL
+            let sisaRupiah = Math.ceil((s / 3600) * dataPS[id].hargaPerJam);
+            sisaRupiah = Math.ceil(sisaRupiah / 100) * 100;
+            document.getElementById('sisaUang' + id).innerText = "Sisa: Rp " + sisaRupiah.toLocaleString('id-ID');
         }
 
         function berhentiMundurLokal(id) {
@@ -419,26 +482,14 @@
             updateTampilan(id);
         }
 
-        function pauseBilling(id) {
-            let sisa = document.getElementById('timer' + id).innerText;
-            let pelanggan = document.getElementById('namaPelang' + id).value;
-            updateCloud(id, false);
-            kirimKeSheets(getNamaUnit(id), pelanggan, "STOP/PAUSE", "Rp " + dataPS[id].uangTerakhir, sisa);
-        }
+        function pauseBilling(id) { pancingAudio(); updateCloud(id, false); }
 
         function resetBilling(id) {
             if (!confirm("RESET TOTAL?")) return;
-            let sisa = document.getElementById('timer' + id).innerText;
-            let pelanggan = document.getElementById('namaPelang' + id).value;
-            let namaPS = getNamaUnit(id);
-            let totalUang = dataPS[id].uangTerakhir;
-            kirimKeSheets(namaPS, pelanggan, "RESET (MANUAL)", "Rp " + totalUang, sisa);
+            pancingAudio();
             dataPS[id].detik = 0; dataPS[id].endTime = 0; dataPS[id].uangTerakhir = 0;
-            db.ref('ps_status/' + id).set({
-                endTime: 0, jalan: false, pelanggan: "", uangTerakhir: 0, detikTersisa: 0
-            }).then(() => {
-                document.getElementById('namaPelang' + id).value = "";
-                updateTampilan(id);
+            db.ref('ps_status/' + id).set({ endTime: 0, jalan: false, pelanggan: "", uangTerakhir: 0, detikTersisa: 0 }).then(() => {
+                document.getElementById('namaPelang' + id).value = ""; updateTampilan(id);
             });
         }
 
@@ -447,22 +498,13 @@
             let div = document.createElement("div");
             div.id = "notif-habis-" + id;
             div.style = "position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:red; color:white; padding:30px; border-radius:15px; text-align:center; z-index:9999; border: 5px solid white; box-shadow: 0 0 30px rgba(255,0,0,0.5); width: 85%; max-width: 450px;";
-            div.innerHTML = `
-                <h1 class='fw-bold'>WAKTU HABIS!</h1>
-                <hr style="border-top: 2px solid white;">
-                <h2 class='text-warning fw-bold'>${pelanggan}</h2>
-                <p class='fs-4'>Unit: <span class='badge bg-light text-dark'>${unit}</span></p>
-                <button class='btn btn-light btn-lg w-100 fw-bold mt-3' onclick="matikanAlarmManual(${id})">OK, MATIKAN ALARM</button>
-            `;
+            div.innerHTML = `<h1 class='fw-bold'>WAKTU HABIS!</h1><hr style="border-top: 2px solid white;"><h2 class='text-warning fw-bold'>${pelanggan}</h2><p class='fs-4'>Unit: <span class='badge bg-light text-dark'>${unit}</span></p><button class='btn btn-light btn-lg w-100 fw-bold mt-3' onclick="matikanAlarmManual(${id})">OK, MATIKAN ALARM</button>`;
             document.body.appendChild(div);
             window["audio_aktif_" + id] = audio;
         }
 
         function matikanAlarmManual(id) {
-            if (window["audio_aktif_" + id]) {
-                window["audio_aktif_" + id].pause();
-                window["audio_aktif_" + id].currentTime = 0;
-            }
+            if (window["audio_aktif_" + id]) { window["audio_aktif_" + id].pause(); window["audio_aktif_" + id].currentTime = 0; }
             let notif = document.getElementById("notif-habis-" + id);
             if (notif) notif.remove();
         }
