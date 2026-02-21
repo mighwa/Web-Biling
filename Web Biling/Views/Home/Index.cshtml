@@ -32,6 +32,10 @@
 <div id="mainBilling" style="display:none;">
     <div class="container-fluid py-3" style="background-color: #1a1a1a; min-height: 100vh; color: white;">
 
+        <div id="btnNotif" class="alert alert-warning text-center fw-bold" style="cursor:pointer; font-size: 0.9rem;" onclick="mintaIzinNotif()">
+            🚨 KLIK DI SINI UNTUK AKTIFKAN ALARM HP 🚨
+        </div>
+
         <h2 class="text-center text-warning mb-5 fw-bold"><span class="text-primary">QNR PLAYSTATION</span></h2>
 
         <h3 class="text-warning border-bottom border-warning pb-2 mb-4">KATEGORI PS 4</h3>
@@ -49,6 +53,7 @@
                         </div>
                         <input type="number" id="input4" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
                         <button class="btn btn-success btn-lg w-100 mb-3" onclick="hitungHarga(4)">+ UANG</button>
+
                         <input type="number" step="0.01" id="inputMenit4" class="form-control mb-2 text-center" placeholder="Contoh: 1.30 (1m 30d)">
                         <div class="btn-group w-100 mb-3">
                             <button class="btn btn-primary" onclick="kontrolWaktu(4, 'tambah')">+ WAKTU</button>
@@ -71,6 +76,7 @@
                         </div>
                         <input type="number" id="input1" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
                         <button class="btn btn-danger btn-lg w-100 mb-3" onclick="hitungHarga(1)">+ UANG</button>
+
                         <input type="number" step="0.01" id="inputMenit1" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
                             <button class="btn btn-primary" onclick="kontrolWaktu(1, 'tambah')">+ WAKTU</button>
@@ -97,6 +103,7 @@
                         </div>
                         <input type="number" id="input3" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
                         <button class="btn btn-info btn-lg w-100 mb-3" onclick="hitungHarga(3)">+ UANG</button>
+
                         <input type="number" step="0.01" id="inputMenit3" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
                             <button class="btn btn-primary" onclick="kontrolWaktu(3, 'tambah')">+ WAKTU</button>
@@ -119,6 +126,7 @@
                         </div>
                         <input type="number" id="input2" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
                         <button class="btn btn-secondary btn-lg w-100 mb-3" onclick="hitungHarga(2)">+ UANG</button>
+
                         <input type="number" step="0.01" id="inputMenit2" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
                             <button class="btn btn-primary" onclick="kontrolWaktu(2, 'tambah')">+ WAKTU</button>
@@ -145,7 +153,8 @@
                         </div>
                         <input type="number" id="input5" class="form-control mb-2 text-center" placeholder="Masukkan Rp">
                         <button class="btn btn-info btn-lg text-white" onclick="hitungHarga(5)">+ UANG</button>
-                        <input type="number" step="0.01" id="inputMenit5" class="form-control mb-3 text-center" placeholder="Contoh: 1.30">
+
+                        <input type="number" step="0.01" id="inputMenit5" class="form-control mb-2 text-center" placeholder="Contoh: 1.30">
                         <div class="btn-group w-100 mb-3">
                             <button class="btn btn-primary" onclick="kontrolWaktu(5, 'tambah')">+ WAKTU</button>
                             <button class="btn btn-danger" onclick="kontrolWaktu(5, 'kurang')">- WAKTU</button>
@@ -157,7 +166,7 @@
         </div>
 
         <div class="text-center mt-5">
-            <button class="btn btn-sm btn-outline-secondary" onclick="logoutBilling()">Log Out Perangkat</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="logoutBilling()">Log Out dari Perangkat Ini</button>
         </div>
     </div>
 </div>
@@ -200,44 +209,13 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 6000 }
         };
 
-        // --- SISTEM LOGIN FIX STUCK ---
         window.addEventListener('load', function() {
-            if (localStorage.getItem("billing_logged_in") === "true") { 
-                masukKeSistem();
-                setTimeout(mintaIzinNotifOtomatis, 1000); 
-            }
+            if (localStorage.getItem("billing_logged_in") === "true") { masukKeSistem(); }
         });
-
-        function cekLogin() {
-            if (isLocked) return;
-            let input = document.getElementById('pinInput').value;
-            if (input === PIN_KASIR) {
-                if (document.getElementById('stayLoggedIn').checked) {
-                    localStorage.setItem("billing_logged_in", "true");
-                }
-                masukKeSistem();
-                // Audio dimuat SETELAH UI terbuka agar tidak lag/stuck
-                setTimeout(pancingAudio, 500); 
-                mintaIzinNotifOtomatis();
-            } else {
-                salahHitung++;
-                document.getElementById('errorLogin').style.display = "block";
-                if (salahHitung >= 3) lockSystem();
-                else document.getElementById('errorLogin').innerText = "PIN SALAH! (" + salahHitung + "/3)";
-                document.getElementById('pinInput').value = "";
-            }
-        }
 
         function masukKeSistem() {
             document.getElementById('loginLayer').style.display = "none";
             document.getElementById('mainBilling').style.display = "block";
-        }
-
-        // --- AUDIO & NOTIF UNLOCKER ---
-        function mintaIzinNotifOtomatis() {
-            if ("Notification" in window && Notification.permission === "default") {
-                Notification.requestPermission();
-            }
         }
 
         function pancingAudio() {
@@ -249,12 +227,18 @@
                 a.play().then(() => {
                     a.pause(); a.currentTime = 0; a.volume = 1;
                     audioResources[key] = a;
-                }).catch(e => console.log("Audio siap menanti klik"));
+                }).catch(e => {});
             }
             audioSudahAktif = true;
         }
 
-        // --- FUNGSI BILLING (FITUR UTAMA) ---
+        function logoutBilling() {
+            if(confirm("Keluar dan minta PIN lagi?")) {
+                localStorage.removeItem("billing_logged_in");
+                location.reload();
+            }
+        }
+
         function konversiInputKeDetik(val) {
             let strVal = val.toString();
             if (strVal.includes('.')) {
@@ -262,50 +246,62 @@
                 let mnt = parseInt(parts[0]) || 0;
                 let dtk = parseInt(parts[1]) || 0;
                 return (mnt * 60) + dtk;
+            } else {
+                return parseInt(val) * 60;
             }
-            return parseInt(val) * 60;
         }
 
         function kontrolWaktu(id, aksi) {
             pancingAudio();
             let nInput = document.getElementById('namaPelang' + id);
             if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
+
             let val = document.getElementById('inputMenit' + id).value;
             if (!val || isNaN(val)) return;
+
             let totalDetikBerubah = konversiInputKeDetik(val);
-            if (aksi === 'tambah') dataPS[id].detik += totalDetikBerubah;
-            else { dataPS[id].detik -= totalDetikBerubah; if (dataPS[id].detik < 0) dataPS[id].detik = 0; }
+
+            if (aksi === 'tambah') {
+                dataPS[id].detik += totalDetikBerubah;
+            } else {
+                dataPS[id].detik -= totalDetikBerubah;
+                if (dataPS[id].detik < 0) dataPS[id].detik = 0;
+            }
+
             updateCloud(id, true);
             kirimKeSheets(getNamaUnit(id), nInput.value, (aksi === 'tambah' ? "Tambah Waktu" : "Kurang Waktu"), val, document.getElementById('timer' + id).innerText);
             document.getElementById('inputMenit' + id).value = "";
         }
 
-        function hitungHarga(id) {
-            pancingAudio();
-            let nInput = document.getElementById('namaPelang' + id);
-            if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
-            let input = document.getElementById('input' + id);
-            let uang = parseInt(input.value);
-            if (isNaN(uang) || uang <= 0) return;
-            if (dataPS[id].detik <= 0) dataPS[id].uangTerakhir = uang;
-            else dataPS[id].uangTerakhir += uang;
-            
-            let tambahanDetik = 0;
-            if (id == 2) tambahanDetik = (uang / 3000) * 3600;
-            else if (id == 3) tambahanDetik = (uang / 4000) * 3600;
-            else if (id == 4) tambahanDetik = (uang / 5000) * 3600;
-            else if (id == 1) tambahanDetik = (uang / 6000) * 3600;
-            else if (id == 5) tambahanDetik = (uang / 10000) * 3600;
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').then(() => console.log("SW Terdaftar"));
+        }
 
-            if (tambahanDetik > 0) {
-                dataPS[id].detik += tambahanDetik;
-                updateCloud(id, true);
-                kirimKeSheets(getNamaUnit(id), nInput.value, "Isi Uang", "Rp " + uang, document.getElementById('timer' + id).innerText);
-                input.value = "";
+        function mintaIzinNotif() {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") {
+                    document.getElementById('btnNotif').style.display = 'none';
+                    new Notification("QNR PLAYSTATION", { body: "Alarm HP Aktif!" });
+                }
+            });
+        }
+
+        function kirimNotifHP(id) {
+            if (Notification.permission === "granted") {
+                const nama = document.getElementById('namaPelang' + id).value || "Pelanggan";
+                const unit = getNamaUnit(id);
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification("WAKTU HABIS! 🚨", {
+                        body: `${nama} di ${unit} selesai!`,
+                        icon: "https://cdn-icons-png.flaticon.com/512/681/681123.png",
+                        vibrate: [500, 100, 500],
+                        tag: "ps-" + id,
+                        renotify: true
+                    });
+                });
             }
         }
 
-        // --- FIREBASE & TIMER ---
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -313,11 +309,15 @@
                     const sekarang = Date.now();
                     document.getElementById('namaPelang' + id).value = cloudData.pelanggan || "";
                     dataPS[id].uangTerakhir = cloudData.uangTerakhir || 0;
+
                     if (cloudData.jalan) {
                         dataPS[id].endTime = cloudData.endTime;
                         dataPS[id].detik = Math.floor((cloudData.endTime - sekarang) / 1000);
-                        if (dataPS[id].detik > 0) { if (!dataPS[id].interval) mulaiMundurLokal(id, true); } 
-                        else { berhentiMundurLokal(id); }
+                        if (dataPS[id].detik > 0) {
+                            if (!dataPS[id].interval) mulaiMundurLokal(id, true);
+                        } else {
+                            berhentiMundurLokal(id);
+                        }
                     } else {
                         dataPS[id].detik = cloudData.detikTersisa || 0;
                         berhentiMundurLokal(id);
@@ -327,7 +327,9 @@
         }
 
         function updateCloud(id, jalanStatus) {
-            if (jalanStatus) { dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000); }
+            if (jalanStatus) {
+                dataPS[id].endTime = Date.now() + (dataPS[id].detik * 1000);
+            }
             db.ref('ps_status/' + id).set({
                 endTime: dataPS[id].endTime || 0,
                 jalan: jalanStatus,
@@ -335,6 +337,97 @@
                 uangTerakhir: dataPS[id].uangTerakhir,
                 detikTersisa: dataPS[id].detik
             });
+        }
+
+        function kirimKeSheets(namaPS, pelanggan, tipe, jumlah, sisa) {
+            fetch(`${URL_SPREADSHEET}?namaPS=${namaPS}&pelanggan=${pelanggan}&tipe=${tipe}&jumlah=${jumlah}&sisa=${sisa}`, { mode: 'no-cors' });
+        }
+
+        function cekLogin() {
+            if (isLocked) return;
+            pancingAudio();
+            let input = document.getElementById('pinInput').value;
+            if (input === PIN_KASIR) {
+                if (document.getElementById('stayLoggedIn').checked) localStorage.setItem("billing_logged_in", "true");
+                masukKeSistem();
+            } else {
+                salahHitung++;
+                document.getElementById('errorLogin').style.display = "block";
+                if (salahHitung >= 3) lockSystem();
+                else document.getElementById('errorLogin').innerText = "PIN SALAH! (" + salahHitung + "/3)";
+                document.getElementById('pinInput').value = "";
+            }
+        }
+
+        function lockSystem() {
+            isLocked = true;
+            document.getElementById('loginForm').style.display = "none";
+            document.getElementById('lockMessage').style.display = "block";
+            let waktuTunggu = 30;
+            let countdownInterval = setInterval(() => {
+                waktuTunggu--;
+                document.getElementById('cooldown').innerText = waktuTunggu;
+                if (waktuTunggu <= 0) {
+                    clearInterval(countdownInterval);
+                    isLocked = false; salahHitung = 0;
+                    document.getElementById('loginForm').style.display = "block";
+                    document.getElementById('lockMessage').style.display = "none";
+                }
+            }, 1000);
+        }
+
+        function getNamaUnit(id) {
+            return (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (1 Player)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (2 Player)";
+        }
+
+        function hitungHarga(id) {
+            pancingAudio();
+            let nInput = document.getElementById('namaPelang' + id);
+            if (nInput.value.trim() === "") { alert("⚠️ ISI NAMA PELANGGAN!"); return; }
+            let input = document.getElementById('input' + id);
+            let uang = parseInt(input.value);
+            if (isNaN(uang) || uang <= 0) return;
+
+            if (dataPS[id].detik <= 0) dataPS[id].uangTerakhir = uang;
+            else dataPS[id].uangTerakhir += uang;
+
+            let namaPS = getNamaUnit(id);
+            let tipeLaporan = (dataPS[id].detik <= 0) ? "MULAI MAIN" : "Input Uang";
+            let tambahanDetik = 0;
+
+            if (id == 2) {
+                if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
+                else if (uang >= 8000) tambahanDetik = (3 * 3600) + (((uang - 8000) / 3000) * 3600);
+                else if (uang >= 5000) tambahanDetik = (2 * 3600) + (((uang - 5000) / 3000) * 3600);
+                else tambahanDetik = (uang / 3000) * 3600;
+            } else if (id == 3) {
+                if (uang >= 15000) tambahanDetik = (4 * 3600) + (((uang - 15000) / 4000) * 3600);
+                else if (uang >= 12000) tambahanDetik = (3 * 3600) + (((uang - 12000) / 4000) * 3600);
+                else if (uang >= 8000) tambahanDetik = (2 * 3600) + (((uang - 8000) / 4000) * 3600);
+                else tambahanDetik = (uang / 4000) * 3600;
+            } else if (id == 4) {
+                if (uang >= 20000) tambahanDetik = (4.5 * 3600) + (((uang - 20000) / 5000) * 3600);
+                else if (uang >= 15000) tambahanDetik = (3 * 3600) + (((uang - 15000) / 5000) * 3600);
+                else if (uang >= 10000) tambahanDetik = (2 * 3600) + (((uang - 10000) / 5000) * 3600);
+                else tambahanDetik = (uang / 5000) * 3600;
+            } else if (id == 1) {
+                if (uang >= 24000) tambahanDetik = (4.5 * 3600) + (((uang - 24000) / 6000) * 3600);
+                else if (uang >= 18000) tambahanDetik = (3 * 3600) + (((uang - 18000) / 6000) * 3600);
+                else if (uang >= 12000) tambahanDetik = (2 * 3600) + (((uang - 12000) / 6000) * 3600);
+                else tambahanDetik = (uang / 6000) * 3600;
+            } else if (id == 5) {
+                if (uang >= 40000) tambahanDetik = (4.5 * 3600) + (((uang - 40000) / 10000) * 3600);
+                else if (uang >= 30000) tambahanDetik = (3 * 3600) + (((uang - 30000) / 10000) * 3600);
+                else if (uang >= 20000) tambahanDetik = (2 * 3600) + (((uang - 20000) / 10000) * 3600);
+                else tambahanDetik = (uang / 10000) * 3600;
+            }
+
+            if (tambahanDetik > 0) {
+                dataPS[id].detik += tambahanDetik;
+                updateCloud(id, true);
+                kirimKeSheets(getNamaUnit(id), nInput.value, tipeLaporan, "Rp " + uang, document.getElementById('timer' + id).innerText);
+                input.value = "";
+            }
         }
 
         function mulaiMundurLokal(id, dariFirebase = false) {
@@ -372,6 +465,8 @@
             let m = Math.floor((s % 3600) / 60).toString().padStart(2, '0');
             let sec = (s % 60).toString().padStart(2, '0');
             document.getElementById('timer' + id).innerText = `${h}:${m}:${sec}`;
+
+            // SISA UANG KECIL
             let sisaRupiah = Math.ceil((s / 3600) * dataPS[id].hargaPerJam);
             sisaRupiah = Math.ceil(sisaRupiah / 100) * 100;
             document.getElementById('sisaUang' + id).innerText = "Sisa: Rp " + sisaRupiah.toLocaleString('id-ID');
@@ -387,6 +482,8 @@
             updateTampilan(id);
         }
 
+        function pauseBilling(id) { pancingAudio(); updateCloud(id, false); }
+
         function resetBilling(id) {
             if (!confirm("RESET TOTAL?")) return;
             pancingAudio();
@@ -394,53 +491,6 @@
             db.ref('ps_status/' + id).set({ endTime: 0, jalan: false, pelanggan: "", uangTerakhir: 0, detikTersisa: 0 }).then(() => {
                 document.getElementById('namaPelang' + id).value = ""; updateTampilan(id);
             });
-        }
-
-        function lockSystem() {
-            isLocked = true;
-            document.getElementById('loginForm').style.display = "none";
-            document.getElementById('lockMessage').style.display = "block";
-            let waktuTunggu = 30;
-            let countdownInterval = setInterval(() => {
-                waktuTunggu--;
-                document.getElementById('cooldown').innerText = waktuTunggu;
-                if (waktuTunggu <= 0) {
-                    clearInterval(countdownInterval);
-                    isLocked = false; salahHitung = 0;
-                    document.getElementById('loginForm').style.display = "block";
-                    document.getElementById('lockMessage').style.display = "none";
-                }
-            }, 1000);
-        }
-
-        function getNamaUnit(id) {
-            return (id == 5) ? "PS 5" : (id == 4) ? "PS 4 (1 Player)" : (id == 3) ? "PS 3" : (id == 2) ? "PS 2" : "PS 4 (2 Player)";
-        }
-
-        function kirimKeSheets(namaPS, pelanggan, tipe, jumlah, sisa) {
-            fetch(`${URL_SPREADSHEET}?namaPS=${namaPS}&pelanggan=${pelanggan}&tipe=${tipe}&jumlah=${jumlah}&sisa=${sisa}`, { mode: 'no-cors' });
-        }
-
-        function logoutBilling() {
-            if(confirm("Log Out?")) { localStorage.removeItem("billing_logged_in"); location.reload(); }
-        }
-
-        function pauseBilling(id) { pancingAudio(); updateCloud(id, false); }
-
-        function kirimNotifHP(id) {
-            if (Notification.permission === "granted") {
-                const nama = document.getElementById('namaPelang' + id).value || "Pelanggan";
-                const unit = getNamaUnit(id);
-                navigator.serviceWorker.ready.then(reg => {
-                    reg.showNotification("WAKTU HABIS! 🚨", {
-                        body: `${nama} di ${unit} selesai!`,
-                        icon: "https://cdn-icons-png.flaticon.com/512/681/681123.png",
-                        vibrate: [500, 100, 500],
-                        tag: "ps-" + id,
-                        renotify: true
-                    });
-                });
-            }
         }
 
         function tampilkanPesanHabis(id, audio, pelanggan, unit) {
@@ -457,10 +507,6 @@
             if (window["audio_aktif_" + id]) { window["audio_aktif_" + id].pause(); window["audio_aktif_" + id].currentTime = 0; }
             let notif = document.getElementById("notif-habis-" + id);
             if (notif) notif.remove();
-        }
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').then(() => console.log("SW Terdaftar"));
         }
     </script>
 }
