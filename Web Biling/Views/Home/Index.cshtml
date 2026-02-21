@@ -1,7 +1,7 @@
 @{
+    /* Menonaktifkan Layout bawaan ASP.NET agar bar putih di atas hilang */
     Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* PERBAIKAN: Menggunakan @@ agar Razor tidak menganggap ini error C# */
+        /* Menggunakan @@ agar Razor tidak menganggapnya sebagai error C# */
         @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
 
         body {
@@ -107,7 +107,7 @@
             <div class="flex items-center gap-3">
                 <div class="bg-yellow-500 p-2 rounded-lg"><i class="fas fa-crown text-black"></i></div>
                 <div>
-                    <h1 class="text-xl font-bold text-white leading-none italic">QNR <span class="text-yellow-500">PLAYSTATION</span></h1>
+                    <h1 class="text-xl font-bold text-white leading-none italic">QNR <span class="text-yellow-500">PRO</span></h1>
                     <span id="clock-display" class="text-[10px] text-gray-400 uppercase tracking-widest font-bold"></span>
                 </div>
             </div>
@@ -374,16 +374,28 @@
         async function resetBilling(id, ask = true) {
             if (ask) {
                 if (!confirm("Stop sesi dan hapus data?")) return;
-                const pel = document.getElementById(`pelanggan-${id}`).value || "-";
-                const sisaW = document.getElementById(`timer-${id}`).innerText;
-                const sisaU = document.getElementById(`sisa-${id}`).innerText;
-                let statusFinal = (localState[id].detik > 0) ? "BELUM HABIS" : "WAKTU HABIS";
-
-                try {
-                    await fetch(`${URL_SPREADSHEET}?namaPS=${encodeURIComponent(dataPS[id].name)}&pelanggan=${encodeURIComponent(pel)}&tipe=${statusFinal}&uangMasuk=0&waktu=${encodeURIComponent(sisaW)}&sisa=${encodeURIComponent(sisaU)}`, { mode: 'no-cors' });
-                } catch (e) { console.log("Report Error:", e); }
             }
-            db.ref('ps_status/' + id).set({ detikTersisa: 0, endTime: 0, jalan: false, pelanggan: "" });
+
+            // 1. Simpan data sementara di variabel sebelum dihapus
+            const namaPS = dataPS[id].name;
+            const pel = document.getElementById(`pelanggan-${id}`).value || "-";
+            const sisaW = document.getElementById(`timer-${id}`).innerText;
+            const sisaU = document.getElementById(`sisa-${id}`).innerText;
+            let statusFinal = (localState[id].detik > 0) ? "BELUM HABIS" : "WAKTU HABIS";
+
+            // 2. LANGSUNG RESET FIREBASE (Agar layar kasir langsung nol tanpa jeda)
+            db.ref('ps_status/' + id).set({ 
+                detikTersisa: 0, 
+                endTime: 0, 
+                jalan: false, 
+                pelanggan: "" 
+            });
+
+            // 3. PROSES KIRIM KE GOOGLE SHEETS (Tetap berjalan di background tanpa menghambat layar)
+            fetch(`${URL_SPREADSHEET}?namaPS=${encodeURIComponent(namaPS)}&pelanggan=${encodeURIComponent(pel)}&tipe=${encodeURIComponent(statusFinal)}&uangMasuk=0&waktu=${encodeURIComponent(sisaW)}&sisa=${encodeURIComponent(sisaU)}`, { 
+                mode: 'no-cors',
+                cache: 'no-cache'
+            }).catch(e => console.log("Laporan Sheets sedang diproses...", e));
         }
 
         function syncName(id) { db.ref('ps_status/' + id).update({ pelanggan: document.getElementById(`pelanggan-${id}`).value }); }
