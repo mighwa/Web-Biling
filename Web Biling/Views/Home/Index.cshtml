@@ -200,12 +200,11 @@
             1: { detik: 0, interval: null, jalan: false, endTime: null, uangTerakhir: 0, hargaPerJam: 6000 }
         };
 
-        // --- LOGIN LOGIC ---
+        // --- SISTEM LOGIN FIX STUCK ---
         window.addEventListener('load', function() {
             if (localStorage.getItem("billing_logged_in") === "true") { 
                 masukKeSistem();
-                // Tunggu sedikit baru minta izin biar tidak dianggap spam oleh browser HP
-                setTimeout(mintaIzinNotifOtomatis, 2000); 
+                setTimeout(mintaIzinNotifOtomatis, 1000); 
             }
         });
 
@@ -217,7 +216,8 @@
                     localStorage.setItem("billing_logged_in", "true");
                 }
                 masukKeSistem();
-                pancingAudio(); // Suara diaktifkan SETELAH login berhasil
+                // Audio dimuat SETELAH UI terbuka agar tidak lag/stuck
+                setTimeout(pancingAudio, 500); 
                 mintaIzinNotifOtomatis();
             } else {
                 salahHitung++;
@@ -233,7 +233,7 @@
             document.getElementById('mainBilling').style.display = "block";
         }
 
-        // --- NOTIF & AUDIO ---
+        // --- AUDIO & NOTIF UNLOCKER ---
         function mintaIzinNotifOtomatis() {
             if ("Notification" in window && Notification.permission === "default") {
                 Notification.requestPermission();
@@ -249,12 +249,12 @@
                 a.play().then(() => {
                     a.pause(); a.currentTime = 0; a.volume = 1;
                     audioResources[key] = a;
-                }).catch(e => console.log("Audio bypass standby"));
+                }).catch(e => console.log("Audio siap menanti klik"));
             }
             audioSudahAktif = true;
         }
 
-        // --- BILLING FUNCTIONS ---
+        // --- FUNGSI BILLING (FITUR UTAMA) ---
         function konversiInputKeDetik(val) {
             let strVal = val.toString();
             if (strVal.includes('.')) {
@@ -262,9 +262,8 @@
                 let mnt = parseInt(parts[0]) || 0;
                 let dtk = parseInt(parts[1]) || 0;
                 return (mnt * 60) + dtk;
-            } else {
-                return parseInt(val) * 60;
             }
+            return parseInt(val) * 60;
         }
 
         function kontrolWaktu(id, aksi) {
@@ -290,33 +289,14 @@
             if (isNaN(uang) || uang <= 0) return;
             if (dataPS[id].detik <= 0) dataPS[id].uangTerakhir = uang;
             else dataPS[id].uangTerakhir += uang;
+            
             let tambahanDetik = 0;
-            if (id == 2) { // PS 2
-                if (uang >= 10000) tambahanDetik = (4 * 3600) + (((uang - 10000) / 3000) * 3600);
-                else if (uang >= 8000) tambahanDetik = (3 * 3600) + (((uang - 8000) / 3000) * 3600);
-                else if (uang >= 5000) tambahanDetik = (2 * 3600) + (((uang - 5000) / 3000) * 3600);
-                else tambahanDetik = (uang / 3000) * 3600;
-            } else if (id == 3) { // PS 3
-                if (uang >= 15000) tambahanDetik = (4 * 3600) + (((uang - 15000) / 4000) * 3600);
-                else if (uang >= 12000) tambahanDetik = (3 * 3600) + (((uang - 12000) / 4000) * 3600);
-                else if (uang >= 8000) tambahanDetik = (2 * 3600) + (((uang - 8000) / 4000) * 3600);
-                else tambahanDetik = (uang / 4000) * 3600;
-            } else if (id == 4) { // PS 4 1P
-                if (uang >= 20000) tambahanDetik = (4.5 * 3600) + (((uang - 20000) / 5000) * 3600);
-                else if (uang >= 15000) tambahanDetik = (3 * 3600) + (((uang - 15000) / 5000) * 3600);
-                else if (uang >= 10000) tambahanDetik = (2 * 3600) + (((uang - 10000) / 5000) * 3600);
-                else tambahanDetik = (uang / 5000) * 3600;
-            } else if (id == 1) { // PS 4 2P
-                if (uang >= 24000) tambahanDetik = (4.5 * 3600) + (((uang - 24000) / 6000) * 3600);
-                else if (uang >= 18000) tambahanDetik = (3 * 3600) + (((uang - 18000) / 6000) * 3600);
-                else if (uang >= 12000) tambahanDetik = (2 * 3600) + (((uang - 12000) / 6000) * 3600);
-                else tambahanDetik = (uang / 6000) * 3600;
-            } else if (id == 5) { // PS 5
-                if (uang >= 40000) tambahanDetik = (4.5 * 3600) + (((uang - 40000) / 10000) * 3600);
-                else if (uang >= 30000) tambahanDetik = (3 * 3600) + (((uang - 30000) / 10000) * 3600);
-                else if (uang >= 20000) tambahanDetik = (2 * 3600) + (((uang - 20000) / 10000) * 3600);
-                else tambahanDetik = (uang / 10000) * 3600;
-            }
+            if (id == 2) tambahanDetik = (uang / 3000) * 3600;
+            else if (id == 3) tambahanDetik = (uang / 4000) * 3600;
+            else if (id == 4) tambahanDetik = (uang / 5000) * 3600;
+            else if (id == 1) tambahanDetik = (uang / 6000) * 3600;
+            else if (id == 5) tambahanDetik = (uang / 10000) * 3600;
+
             if (tambahanDetik > 0) {
                 dataPS[id].detik += tambahanDetik;
                 updateCloud(id, true);
@@ -325,7 +305,7 @@
             }
         }
 
-        // --- FIREBASE SYNC ---
+        // --- FIREBASE & TIMER ---
         for (let id in dataPS) {
             db.ref('ps_status/' + id).on('value', (snapshot) => {
                 const cloudData = snapshot.val();
@@ -407,8 +387,6 @@
             updateTampilan(id);
         }
 
-        function pauseBilling(id) { pancingAudio(); updateCloud(id, false); }
-
         function resetBilling(id) {
             if (!confirm("RESET TOTAL?")) return;
             pancingAudio();
@@ -445,6 +423,24 @@
 
         function logoutBilling() {
             if(confirm("Log Out?")) { localStorage.removeItem("billing_logged_in"); location.reload(); }
+        }
+
+        function pauseBilling(id) { pancingAudio(); updateCloud(id, false); }
+
+        function kirimNotifHP(id) {
+            if (Notification.permission === "granted") {
+                const nama = document.getElementById('namaPelang' + id).value || "Pelanggan";
+                const unit = getNamaUnit(id);
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.showNotification("WAKTU HABIS! 🚨", {
+                        body: `${nama} di ${unit} selesai!`,
+                        icon: "https://cdn-icons-png.flaticon.com/512/681/681123.png",
+                        vibrate: [500, 100, 500],
+                        tag: "ps-" + id,
+                        renotify: true
+                    });
+                });
+            }
         }
 
         function tampilkanPesanHabis(id, audio, pelanggan, unit) {
