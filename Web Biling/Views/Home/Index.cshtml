@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Menggunakan @@ agar Razor tidak menganggapnya sebagai error C# */
-        @@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap');
 
         body {
             background: radial-gradient(circle at top right, #1a1a1a, #000000);
@@ -107,7 +107,7 @@
             <div class="flex items-center gap-3">
                 <div class="bg-yellow-500 p-2 rounded-lg"><i class="fas fa-crown text-black"></i></div>
                 <div>
-                    <h1 class="text-xl font-bold text-white leading-none italic">QNR <span class="text-yellow-500">PRO</span></h1>
+                    <h1 class="text-xl font-bold text-white leading-none italic">QNR <span class="text-yellow-500">PLAYSTATION</span></h1>
                     <span id="clock-display" class="text-[10px] text-gray-400 uppercase tracking-widest font-bold"></span>
                 </div>
             </div>
@@ -157,6 +157,12 @@
         let audioSudahAktif = false;
         let salahHitung = 0;
         let isLocked = false;
+
+        // --- TAMBAHAN SYSTEM: SINKRONISASI SERVER ---
+        let serverOffset = 0;
+        db.ref('.info/serverTimeOffset').on('value', (snap) => {
+            serverOffset = snap.val() || 0;
+        });
 
         window.addEventListener('load', () => {
             if (localStorage.getItem("billing_logged_in") === "true") masukKeSistem();
@@ -264,10 +270,11 @@
             document.getElementById(`btn-pause-${id}`).classList.remove('hidden');
 
             localState[id].interval = setInterval(() => {
-                const now = Date.now();
+                // --- TAMBAHAN SYSTEM: ANTISIPASI 0.5 DETIK & SERVER OFFSET ---
+                const now = Date.now() + serverOffset;
                 const diff = localState[id].endTime - now;
 
-                if (diff > 0) {
+                if (diff > 500) { 
                     localState[id].detik = Math.floor(diff / 1000);
                     updateVisual(id);
                 } else if (localState[id].jalan) {
@@ -302,7 +309,9 @@
             if (localState[id].detik <= 0) return alert("Waktu belum diisi!");
 
             pancingAudio();
-            const newEndTime = Date.now() + (localState[id].detik * 1000);
+            // --- TAMBAHAN SYSTEM: GUNAKAN WAKTU SERVER SAAT PLAY ---
+            const nowServer = Date.now() + serverOffset;
+            const newEndTime = nowServer + (localState[id].detik * 1000);
             db.ref('ps_status/' + id).update({ jalan: true, endTime: newEndTime });
         }
 
@@ -326,7 +335,8 @@
             } else if (id == 5) { if (uang >= 40000) bonus = (4.5 * 3600) + (((uang - 40000) / 10000) * 3600); else if (uang >= 30000) bonus = (3 * 3600) + (((uang - 30000) / 10000) * 3600); else if (uang >= 20000) bonus = (2 * 3600) + (((uang - 20000) / 10000) * 3600); else bonus = (uang / 10000) * 3600; }
 
             const total = localState[id].detik + bonus;
-            const newEnd = Date.now() + (total * 1000);
+            const nowServer = Date.now() + serverOffset;
+            const newEnd = nowServer + (total * 1000);
             db.ref('ps_status/' + id).update({ detikTersisa: total, endTime: newEnd, jalan: true, pelanggan: pel });
 
             kirimLaporan(dataPS[id].name, pel, "TOP UP", uang, Math.floor(total / 60) + "m", "Aktif");
@@ -340,7 +350,8 @@
             let dtk = val.includes('.') ? (parseInt(val.split('.')[0]) * 60) + (parseInt(val.split('.')[1]) || 0) : parseInt(val) * 60;
             let total = aksi === 'tambah' ? localState[id].detik + dtk : Math.max(0, localState[id].detik - dtk);
 
-            const newEnd = Date.now() + (total * 1000);
+            const nowServer = Date.now() + serverOffset;
+            const newEnd = nowServer + (total * 1000);
             db.ref('ps_status/' + id).update({ detikTersisa: total, endTime: newEnd });
 
             kirimLaporan(dataPS[id].name, pel, aksi.toUpperCase() + " WAKTU", 0, document.getElementById(`timer-${id}`).innerText, val + " Min");
@@ -348,6 +359,9 @@
         }
 
         function finishBilling(id) {
+            // --- TAMBAHAN SYSTEM: PROTEKSI ALARM GANDA ---
+            if (document.getElementById("alert-" + id)) return;
+
             const audio = audioResources[id];
             if (audio) { audio.loop = true; audio.play().catch(() => { }); }
             const pel = document.getElementById(`pelanggan-${id}`).value || "PLAYER";
@@ -376,23 +390,20 @@
                 if (!confirm("Stop sesi dan hapus data?")) return;
             }
 
-            // 1. Simpan data sementara di variabel sebelum dihapus
             const namaPS = dataPS[id].name;
             const pel = document.getElementById(`pelanggan-${id}`).value || "-";
             const sisaW = document.getElementById(`timer-${id}`).innerText;
             const sisaU = document.getElementById(`sisa-${id}`).innerText;
             let statusFinal = (localState[id].detik > 0) ? "BELUM HABIS" : "WAKTU HABIS";
 
-            // 2. LANGSUNG RESET FIREBASE (Agar layar kasir langsung nol tanpa jeda)
-            db.ref('ps_status/' + id).set({ 
-                detikTersisa: 0, 
-                endTime: 0, 
-                jalan: false, 
-                pelanggan: "" 
+            db.ref('ps_status/' + id).set({
+                detikTersisa: 0,
+                endTime: 0,
+                jalan: false,
+                pelanggan: ""
             });
 
-            // 3. PROSES KIRIM KE GOOGLE SHEETS (Tetap berjalan di background tanpa menghambat layar)
-            fetch(`${URL_SPREADSHEET}?namaPS=${encodeURIComponent(namaPS)}&pelanggan=${encodeURIComponent(pel)}&tipe=${encodeURIComponent(statusFinal)}&uangMasuk=0&waktu=${encodeURIComponent(sisaW)}&sisa=${encodeURIComponent(sisaU)}`, { 
+            fetch(`${URL_SPREADSHEET}?namaPS=${encodeURIComponent(namaPS)}&pelanggan=${encodeURIComponent(pel)}&tipe=${encodeURIComponent(statusFinal)}&uangMasuk=0&waktu=${encodeURIComponent(sisaW)}&sisa=${encodeURIComponent(sisaU)}`, {
                 mode: 'no-cors',
                 cache: 'no-cache'
             }).catch(e => console.log("Laporan Sheets sedang diproses...", e));
